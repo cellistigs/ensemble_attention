@@ -1,5 +1,8 @@
 # Annotated bibliography 
 
+## Previous work relating ensembles and attention
+- Kim et al. 2018l "Attention-based ensemble for deep metric learning", arxiv 2018. [link](https://arxiv.org/abs/1804.00382)
+
 ## Training ensembles for improved performance/Ensemble and single model hybrids 
 
 - Lee et al. 2016; "Stochastic Multiple Choice Learning for Training Diverse Deep Ensembles", arxiv 2016. If you have an oracle that can correct multiple competing hypotheses downstream, it can be a good idea to learn multiple likely outcomes instead of a single one. They introduce a loss, stochastic Multiple Choice Learning (sMCL) in which one considers an ensemble of models, and trains them together, but only propagates the error to the model that currently has the lowest loss on any given example. Does better than classical ensembles with oracle evaluation. 
