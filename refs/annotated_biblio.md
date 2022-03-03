@@ -14,7 +14,28 @@
 
 ## Attention 
 
-- TOREAD Vaswani et al. 2017; "Attention is All You Need", arxiv, [link](https://arxiv.org/abs/1706.03762), redefining attention very broadly
+- Vaswani et al. 2017; "Attention is All You Need", arxiv, [link](https://arxiv.org/abs/1706.03762)
+  - What are the potential sources of "diversity" within a transformer model?  
+    - One source of diversity comes from the attention mechanism itself. Any time that we are working with one part of the input at a time, but we expect that we can do better conditioned on the whole thing, we can consider an attention mechanism. Considering the important aspect of the input as the query, and all others as the keys and values. This system will give you the most useful average value for each key. 
+      - Consider the following way to implement scaled dot-product attention as an aggregation mechanism in a deep ensemble: 
+        1. initialize four independent classification nns. 
+        2. extract the feature representations that they generate in their second to last layer, and hit them with 3 trainable projections to turn them into queries, keys and values. 
+        3. treating each network output as a query, calculate the compatibility function with each of the other ensemble member outputs.
+        4. Use compatibility functions to get the weighted outputs of each network.  
+        5. Pass through remaining computation in each network.
+        6. Generate ensemble output through a) averaging, b) voting, c) most confident, d) training another readout layer off concatenated outputs, e) arbitrarily choosing one.  
+        Remark 1. Note that this method has nearly the same number of parameters as standard ensembling, and self-attention merely provides a coupling mechanism between different parts of the same network. Standard ensembling corresponds to the case where the query projection is equal to the key projection.
+        Remark 2. It seems like you could be losing some diversity by averaging the ensemble member outputs- the other aggregation methods may be better. 
+        Remark 3. This process can be iterated, and might actually be more useful to have at lower layers, given insights from treenet (Lee et al. 2015) and others. 
+        Remark 4. This formulation treats the different feature detectors learned by each network as independent "positions", which should contextualize each other. It may be worthwhile to explicitly encourage more diversity, i.e. by taking input augmentations, or something like that. 
+    - Another source of diversity comes from the fact that we have "multi-head" attention. Each key, value, and query are not ingested raw by the attention mechanism, but are randomly projected with different trainable projections. This process not only distinguishes the same token in key, query, and value roles, but also can be repeated to generate multiple separate attention heads, each of which generates different values for a given query. These individual head outputs can be combined together later on with an arbitrary learned matrix. 
+      - We can extend our idea above to this context by also considering N different sets of query, key and value projections, and sharing them all between networks. Having multiple heads might also form another incentive to diversify outputs.  
+    - We can further increase diversity by asking each ensemble member to predict on a different output space. We can imagine different things here, like randomly combining input classes, adding per-instance label noise, or other fun interventions. 
+  - Remark 1. This is an interesting and potentially interpretable model, that can be compared to deep ensembles pretty directly. 
+  - Remark 2. This method looks quite similar to mixture of experts as well: having a network that selects from input classifiers is the fundamental idea of mixture of experts.  
+  - Remark 3. If we perform this self attention at each layer, we introduce an interesting computation into a big network model: we are now asking how the activations in different channels can inform each other. This might be useful for a variety of reasons, like getting conv information from across the model integrated faster.  
+
+
 - TOREAD Dosovitskiy et al. 2020; "An Image is Worth 16x16 Words", arxiv, [link](https://arxiv.org/abs/2010.11929), vision transformers
 - TOREAD Gregor et al. 2015: "DRAW: A Recurrent Neural Network for Image Generation", arxiv, [link](https://arxiv.org/pdf/1502.04623.pdf), attention used in generative modeling
 - TOREAD Cheng et al. 2016: "Long Short-Term Memory Networks for Machine Reading", arxiv, [link](https://arxiv.org/abs/1601.06733), self attention
