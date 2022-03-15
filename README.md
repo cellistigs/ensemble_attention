@@ -16,3 +16,11 @@ Further remarks:
   - How do these compare?
 - Another way to interpret mixture of expert like characteristics would be through hyperensembles: https://arxiv.org/abs/1609.09106
 
+# Repo organization: 
+- src: source code. 
+- scripts: scripts that run against source code. 
+- configs: configuration files that determine parameters used to run scripts (hydra format yaml). 
+- refs: literature and references. 
+
+# Requirements: 
+You will have to install [this package](https://github.com/cellistigs/cifar10_ood) from source to get this to work. 
