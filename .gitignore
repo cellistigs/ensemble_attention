@@ -1,2 +1,4 @@
 scripts/outputs/*
 models/*
+src/ensemble_attention/__pycache__/*
+src/ensemble_attention/cifar10_models/__pycache__/*
