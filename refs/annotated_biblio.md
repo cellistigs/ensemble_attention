@@ -15,6 +15,7 @@
 
 ## Attention
 
+- Finn 2021; "Self-Attentive Ensemble Transformer: Representing Ensemble Interactions in Neural Networks for Earth System Models; arxiv, [link]("https://arxiv.org/pdf/2106.13924.pdf). Draws connections between self attention ensembles and particle sampling for modeling dynamical earth system models. 
 - Vaswani et al. 2017; "Attention is All You Need", arxiv, [link](https://arxiv.org/abs/1706.03762)
   - What are the potential sources of "diversity" within a transformer model?  
     - One source of diversity comes from the attention mechanism itself. Any time that we are working with one part of the input at a time, but we expect that we can do better conditioned on the whole thing, we can consider an attention mechanism. Considering the important aspect of the input as the query, and all others as the keys and values. This system will give you the most useful average value for each key. 
