@@ -10,6 +10,7 @@ from .cifar10_models.resnet import resnet18, resnet34, resnet50, wideresnet18, w
 from .cifar10_models.wideresnet_28 import wideresnet28_10
 from .cifar10_models.vgg import vgg11_bn, vgg13_bn, vgg16_bn, vgg19_bn
 from .schduler import WarmupCosineLR
+from .layers import AttnComparison
 
 all_classifiers = {
     "vgg11_bn": vgg11_bn,
@@ -190,17 +191,17 @@ class CIFAR10Module(CIFAR10_Models):
         return [optimizer], [scheduler]
 
 class CIFAR10EnsembleModule(CIFAR10_Models):   
-    """Customized module to train an ensemble of models independently.  
+    """Customized module to train an ensemble of models independently. Requires that  
 
     """
-    def __init__(self,nb_models,hparams):
+    def __init__(self,hparams):
         super().__init__(hparams)
-        self.nb_models = nb_models
+        self.nb_models = hparams.nb_models
 
         self.criterion = torch.nn.CrossEntropyLoss()
         self.accuracy = Accuracy()
 
-        self.models = torch.nn.ModuleList([all_classifiers[self.hparams.classifier]() for i in range(nb_models)]) ## now we add several different instances of the model. 
+        self.models = torch.nn.ModuleList([all_classifiers[self.hparams.classifier]() for i in range(self.nb_models)]) ## now we add several different instances of the model. 
         #del self.model
     
     def forward(self,batch):
@@ -217,10 +218,10 @@ class CIFAR10EnsembleModule(CIFAR10_Models):
             predictions = m(images)
             normed = softmax(predictions)
             softmaxes.append(normed)
-        gmean = torch.exp(torch.mean(torch.log(torch.stack(softmaxes)),dim = 0)) ## implementation from https://stackoverflow.com/questions/59722983/how-to-calculate-geometric-mean-in-a-differentiable-way   
+        mean = torch.mean(torch.stack(softmaxes),dim = 0) 
         ## we can pass this  through directly to the accuracy function. 
-        tloss = self.criterion(gmean,labels)## beware: this is a transformed input, don't evaluate on test loss of ensembles. 
-        accuracy = self.accuracy(gmean,labels)
+        tloss = self.criterion(mean,labels)## beware: this is a transformed input, don't evaluate on test loss of ensembles. 
+        accuracy = self.accuracy(mean,labels)
         return tloss,accuracy*100
 
     def calibration(self,batch):
@@ -236,8 +237,9 @@ class CIFAR10EnsembleModule(CIFAR10_Models):
             predictions = m(images)
             normed = softmax(predictions)
             softmaxes.append(normed)
-        gmean = torch.exp(torch.mean(torch.log(torch.stack(softmaxes)),dim = 0)) ## implementation from https://stackoverflow.com/questions/59722983/how-to-calculate-geometric-mean-in-a-differentiable-way   
-        return gmean,labels
+        #gmean = torch.exp(torch.mean(torch.log(torch.stack(softmaxes)),dim = 0)) ## implementation from https://stackoverflow.com/questions/59722983/how-to-calculate-geometric-mean-in-a-differentiable-way   
+        mean = torch.mean(torch.stack(softmaxes),dim = 0) 
+        return mean,labels
 
     def training_step(self, batch, batch_nb):
         """When we train, we want to train independently. 
@@ -262,7 +264,7 @@ class CIFAR10EnsembleModule(CIFAR10_Models):
     def configure_optimizers(self):
         optimizer = torch.optim.SGD(
             self.models.parameters(),
-            lr=self.hparams.learning_rate,
+            lr=self.hparams.learning_rate*self.hparams.nb_models, ## when jointly training, we need to multiply the learning rate times the number of ensembles to make sure that the effective learning rate for each model stays the same. 
             weight_decay=self.hparams.weight_decay,
             momentum=0.9,
             nesterov=True,
@@ -272,22 +274,24 @@ class CIFAR10EnsembleModule(CIFAR10_Models):
         return [optimizer], [scheduler]
 
 class CIFAR10AttentionEnsembleModule(CIFAR10_Models):
-    """Customized module to train a with attention.  
+    """Customized module to train a with attention. Initialized the same way as standard ensembles.  
 
     """
     def __init__(self,hparams):
-        """Initialize. 
-        """
         super().__init__(hparams)
-        self.hparams = hparams
+        self.nb_models = hparams.nb_models
 
         self.criterion = torch.nn.CrossEntropyLoss()
         self.accuracy = Accuracy()
 
-        ## Figure out the right way to initialize here. 
-        self.model = all_classifiers[self.hparams.classifier]()
-        self.basemodel = wideresnet18()
-        self.submodels = torch.nn.ModuleList([widesubresnet18(self.basemodel,i) for i in range(4)])
+        self.models = torch.nn.ModuleList([all_classifiers[self.hparams.classifier]() for i in range(self.nb_models)]) ## now we add several different instances of the model. 
+        self.attnlayer = self.get_attnlayer(10,hparams.embedding_dim) ## project from 10 dimensional output (CIFAR10 logits) to embedding dimension.
+        
+    def get_attnlayer(self,in_dim,out_dim):
+        """get the attention layer we will use
+        """
+        return AttnComparison(in_dim,out_dim)
+
 
     def forward(self,batch): 
         """First pass forward: try treating like a standard ensemble? 
@@ -298,12 +302,27 @@ class CIFAR10AttentionEnsembleModule(CIFAR10_Models):
 
         losses = []
         accs = []
-        softmaxes = []
-        for m in self.submodels: ## take these logits, and build up another set of outputs on them. 
+        logits = []
+        for m in self.models: ## take these logits, and build up another set of outputs on them. 
             predictions = m(images) ## these are just the pre-softmax outputs. 
-        ## todo: should we add the main model predictions too?
+            logits.append(predictions)
+        logittensor = torch.stack(logits,axis =1) ## shape [batch,models,predictions]    
+        weights = self.attnlayer(logittensor,logittensor) ## gives attention weights with shape [batch,queries, models]
+        weighted_outs = torch.matmul(weights,logittensor) ## shape [batch,queries,predictions]
+        return weighted_outs[:,0,:],weights
 
-        gmean = torch.exp(torch.mean(torch.log(torch.stack(softmaxes)),dim = 0)) ## implementation from https://stackoverflow.com/questions/59722983/how-to-calculate-geometric-mean-in-a-differentiable-way   
+    def training_step(self, batch, batch_nb):
+        """When we train, we want to train independently. 
+        """
+        
+        images, labels = batch
+        predictions,weights = self.forward(batch)
+        loss = self.criterion(predictions, labels)
+        accuracy = self.accuracy(predictions,labels)
+
+        self.log("loss/train", loss)
+        self.log("acc/train", accuracy*100)
+        return loss
 
 class CIFAR10InterEnsembleModule(CIFAR10_Models):
     """Customized module to train a convex combination of a wide model and smaller models. 
