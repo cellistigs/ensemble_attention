@@ -271,6 +271,40 @@ class CIFAR10EnsembleModule(CIFAR10_Models):
         scheduler = self.setup_scheduler(optimizer,total_steps)
         return [optimizer], [scheduler]
 
+class CIFAR10AttentionEnsembleModule(CIFAR10_Models):
+    """Customized module to train a with attention.  
+
+    """
+    def __init__(self,hparams):
+        """Initialize. 
+        """
+        super().__init__(hparams)
+        self.hparams = hparams
+
+        self.criterion = torch.nn.CrossEntropyLoss()
+        self.accuracy = Accuracy()
+
+        ## Figure out the right way to initialize here. 
+        self.model = all_classifiers[self.hparams.classifier]()
+        self.basemodel = wideresnet18()
+        self.submodels = torch.nn.ModuleList([widesubresnet18(self.basemodel,i) for i in range(4)])
+
+    def forward(self,batch): 
+        """First pass forward: try treating like a standard ensemble? 
+
+        """
+        images, labels = batch
+        softmax = torch.nn.Softmax(dim = 1)
+
+        losses = []
+        accs = []
+        softmaxes = []
+        for m in self.submodels: ## take these logits, and build up another set of outputs on them. 
+            predictions = m(images) ## these are just the pre-softmax outputs. 
+        ## todo: should we add the main model predictions too?
+
+        gmean = torch.exp(torch.mean(torch.log(torch.stack(softmaxes)),dim = 0)) ## implementation from https://stackoverflow.com/questions/59722983/how-to-calculate-geometric-mean-in-a-differentiable-way   
+
 class CIFAR10InterEnsembleModule(CIFAR10_Models):
     """Customized module to train a convex combination of a wide model and smaller models. 
 

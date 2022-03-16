@@ -19,6 +19,14 @@ import torch
 import numpy as np
 use_cuda = torch.cuda.is_available()
 
+def initialize_xavier(x):
+    """xavier initialization for transformer attention layers. 
+
+    """
+    nn.init.xavier_uniform_(x.weight)
+    if x.bias is not None:
+        nn.init.constant_(x.bias,0)
+
 def create_subnet_params_output_only(weights,nb_subnets):
     """Calculate subnet parameters, but make a mask that only cares about output channels. 
     """
@@ -220,6 +228,43 @@ class Conv2d_subnet_layer(nn.Conv2d):
     
     def forward(self,input):
         return F.conv2d(input,self.get_masked().float(),bias = self.bias, stride =self.stride, padding = self.padding, groups = self.groups,dilation = self.dilation)
+
+class AttnComparison(nn.Module):
+    """Takes in sets of inputs (analogous to positions/tokens) as an arbitrary number of queries/keys, and determines a matrix of attention weightings of size nxn out of it using two linear projections, Q and K to turn these into queries and keys. The layer outputs a matrix of size n by n giving the attention of each query (rows) against each key (columns). Based on implementation here: https://github.com/tunz/transformer-pytorch/blob/e7266679f0b32fd99135ea617213f986ceede056/model/transformer.py#L60-L97 of multi-head attention. 
+
+    :param in_features: The dimensionality we expect in incoming query/key inputs. 
+    :param out_features: The dimensionality to which we project the queries and keys. 
+    """
+    def __init__(self,in_features,out_features):
+        """
+        """
+        super().__init__()
+        self.linear_q = nn.Linear(in_features,out_features,bias = False)
+        self.linear_k = nn.Linear(in_features,out_features,bias = False)
+
+        self.scale = out_features**(-0.5) ## scaling for dot product attention. 
+        initialize_xavier(self.linear_q)
+        initialize_xavier(self.linear_k)
+        
+    def forward(self,q,k):    
+        """Calculates scaled dot product attention between queries and keys after applying a learned linear transformation to each. 
+        Assumes q is shape (batch,nb_queries,in_features), and k has shape (batch,nb_keys,in_features). 
+        """
+        q_proj = self.linear_q(q) # batch,nb_queries,out_features
+        k_proj = self.linear_k(k) # batch,nb_keys,out_features
+
+        ## transpose k
+        k_transp = k_proj.transpose(1,2) 
+
+        ## scale q before applying dot product. 
+        q_proj.mul_(self.scale)
+
+        ## take dot product: 
+        scales = torch.matmul(q_proj,k_transp) # batch,nb_queries,nb_keys
+        weights = torch.softmax(scales,dim = 2)
+
+        return weights
+
 
 class ChannelSwitcher(nn.Module):
     """Switches the first half and second half of channels given an activation of shape (batch, channels, height, width)
