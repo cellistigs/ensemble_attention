@@ -313,7 +313,7 @@ class CIFAR10AttentionEnsembleModule(CIFAR10_Models):
         weighted_outs = torch.matmul(weights,logittensor) ## shape [batch,queries,predictions]
         chosen = weighted_outs[:,0,:]
         acc = self.accuracy(chosen,labels)
-        return weighted_outs[:,0,:],return acc*100
+        return weighted_outs[:,0,:], acc*100
 
     def training_step(self, batch, batch_nb):
         """When we train, we want to train independently. 
