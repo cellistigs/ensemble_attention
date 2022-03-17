@@ -309,11 +309,9 @@ class CIFAR10AttentionEnsembleModule(CIFAR10_Models):
             logits.append(predictions)
         logittensor = torch.stack(logits,axis =1) ## shape [batch,models,predictions]    
         weights = self.attnlayer(logittensor,logittensor) ## gives attention weights with shape [batch,queries, models]
+        self.log("attn/weightvar",torch.var(weights)) ## add logging for weights. 
         weighted_outs = torch.matmul(weights,logittensor) ## shape [batch,queries,predictions]
-        chosen = weighted_outs[:,0,:]
-        accuracy = self.accuracy(chosen,labels)
-
-        return weighted_outs[:,0,:],accuracy*100
+        return weighted_outs[:,0,:],weights
 
     def training_step(self, batch, batch_nb):
         """When we train, we want to train independently. 
