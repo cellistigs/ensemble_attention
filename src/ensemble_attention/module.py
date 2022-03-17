@@ -298,7 +298,7 @@ class CIFAR10AttentionEnsembleModule(CIFAR10_Models):
 
         """
         images, labels = batch
-        softmax = torch.nn.Softmax(dim = 1)
+        softmax = torch.nn.Softmax(dim = 2)
 
         losses = []
         accs = []
@@ -308,7 +308,7 @@ class CIFAR10AttentionEnsembleModule(CIFAR10_Models):
             logits.append(predictions)
         logittensor = torch.stack(logits,axis =1) ## shape [batch,models,predictions]    
         weights = self.attnlayer(logittensor,logittensor) ## gives attention weights with shape [batch,queries, models]
-        weighted_outs = torch.matmul(weights,logittensor) ## shape [batch,queries,predictions]
+        weighted_outs = softmax(torch.matmul(weights,logittensor)) ## shape [batch,queries,predictions]
         return weighted_outs[:,0,:],weights
 
     def training_step(self, batch, batch_nb):
