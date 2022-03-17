@@ -286,6 +286,7 @@ class CIFAR10AttentionEnsembleModule(CIFAR10_Models):
 
         self.models = torch.nn.ModuleList([all_classifiers[self.hparams.classifier]() for i in range(self.nb_models)]) ## now we add several different instances of the model. 
         self.attnlayer = self.get_attnlayer(10,hparams.embedding_dim) ## project from 10 dimensional output (CIFAR10 logits) to embedding dimension.
+        self.model = torch.nn.ModuleList([self.models,self.attnlayer])
         
     def get_attnlayer(self,in_dim,out_dim):
         """get the attention layer we will use
@@ -323,6 +324,18 @@ class CIFAR10AttentionEnsembleModule(CIFAR10_Models):
         self.log("loss/train", loss)
         self.log("acc/train", accuracy*100)
         return loss
+
+    def configure_optimizers(self):
+        optimizer = torch.optim.SGD(
+            self.model.parameters(),
+            lr=self.hparams.learning_rate,
+            weight_decay=self.hparams.weight_decay,
+            momentum=0.9,
+            nesterov=True,
+        )
+        total_steps = self.hparams.max_epochs * len(self.train_dataloader())
+        scheduler = self.setup_scheduler(optimizer,total_steps)
+        return [optimizer], [scheduler]
 
 class CIFAR10InterEnsembleModule(CIFAR10_Models):
     """Customized module to train a convex combination of a wide model and smaller models. 
