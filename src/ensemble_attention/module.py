@@ -10,7 +10,7 @@ from .cifar10_models.resnet import resnet18, resnet34, resnet50, wideresnet18, w
 from .cifar10_models.wideresnet_28 import wideresnet28_10
 from .cifar10_models.vgg import vgg11_bn, vgg13_bn, vgg16_bn, vgg19_bn
 from .schduler import WarmupCosineLR
-from .layers import AttnComparison
+from .layers import AttnComparison,PosEncodings
 
 all_classifiers = {
     "vgg11_bn": vgg11_bn,
@@ -285,6 +285,8 @@ class CIFAR10AttentionEnsembleModule(CIFAR10_Models):
         self.accuracy = Accuracy()
 
         self.models = torch.nn.ModuleList([all_classifiers[self.hparams.classifier]() for i in range(self.nb_models)]) ## now we add several different instances of the model. 
+        ## applied at logit layer... 
+        self.posenc = PosEncodings(10,0.1,10)
         self.attnlayer = self.get_attnlayer(10,hparams.embedding_dim) ## project from 10 dimensional output (CIFAR10 logits) to embedding dimension.
         self.model = torch.nn.ModuleList([self.models,self.attnlayer])
         
@@ -307,7 +309,7 @@ class CIFAR10AttentionEnsembleModule(CIFAR10_Models):
         for m in self.models: ## take these logits, and build up another set of outputs on them. 
             predictions = m(images) ## these are just the pre-softmax outputs. 
             logits.append(predictions)
-        logittensor = torch.stack(logits,axis =1) ## shape [batch,models,predictions]    
+        logittensor = self.posenc(torch.stack(logits,axis =1)) ## shape [batch,models,predictions]    
         weights = self.attnlayer(logittensor,logittensor) ## gives attention weights with shape [batch,queries, models]
         self.log("attn/weightvar",torch.var(weights)) ## add logging for weights. 
         self.log("attn/weight0",weights[0,0,0]) ## add logging for weights. 
