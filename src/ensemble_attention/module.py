@@ -310,6 +310,10 @@ class CIFAR10AttentionEnsembleModule(CIFAR10_Models):
         logittensor = torch.stack(logits,axis =1) ## shape [batch,models,predictions]    
         weights = self.attnlayer(logittensor,logittensor) ## gives attention weights with shape [batch,queries, models]
         self.log("attn/weightvar",torch.var(weights)) ## add logging for weights. 
+        self.log("attn/weight0",weights[0,0,0]) ## add logging for weights. 
+        self.log("attn/weight1",weights[0,0,1]) ## add logging for weights. 
+        self.log("attn/weight2",weights[0,0,2]) ## add logging for weights. 
+        self.log("attn/weight3",weights[0,0,3]) ## add logging for weights. 
         weighted_outs = torch.matmul(weights,logittensor) ## shape [batch,queries,predictions]
         chosen = weighted_outs[:,0,:]
         acc = self.accuracy(chosen,labels)

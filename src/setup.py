@@ -20,6 +20,6 @@ setuptools.setup(
         package_data={},
         classifiers = [
             "License :: OSI Approved :: MIT License"],
-        python_requires=">=3.8",
+        python_requires=">=3.7",
         )
 

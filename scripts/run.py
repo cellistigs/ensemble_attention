@@ -68,7 +68,7 @@ def custom_eval(model,ind_data,ood_data,device,softmax = True):
     all_labels_ood_array = np.concatenate(all_labels_ood,axis = 0)
     return all_preds_ind_array,all_labels_ind_array,all_preds_ood_array,all_labels_ood_array
 
-@hydra.main(config_path = os.path.join(script_dir,"../configs/"),config_name = "run_default_cpu")
+@hydra.main(config_path = os.path.join(script_dir,"../configs/"),config_name = "run_default_gpu")
 def main(args):
 
     ## Set seeds if given.  
@@ -108,7 +108,7 @@ def main(args):
     if args.module == "base":
         pass
     elif args.module == "ensemble":
-        all_args["nb_models"] = args.nb_models
+        pass
     elif args.module == "attention":
         pass
 
