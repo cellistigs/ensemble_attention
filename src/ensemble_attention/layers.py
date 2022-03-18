@@ -12,6 +12,7 @@ In order to construct resnet models that can be used for interpolation, we need 
 Of these different kinds of layers, we need to change the ones which perform operations which intermix activities across different channels- namely Conv2d and Linear (used as a fully connected final layer). We also want to decouple parameters that scale linearly in the number of channels that they operate on- such as the bias of conv layers, batch norm, or the linear layer at the top of the network.   
 
 """
+import math
 import torch.nn as nn
 import pytorch_lightning as pl
 import torch.nn.functional as F
@@ -275,17 +276,17 @@ class PosEncodings(nn.Module):
         self.dropout = nn.Dropout(p=dropout)
 
         position = torch.arange(max_len).unsqueeze(1)
-        div_term = torch.exp(torch.arange(0, d_model, 2) * (-math.log(10000.0) / d_model))
-        pe = torch.zeros(max_len, 1, d_model)
+        div_term = torch.exp(torch.arange(0, dmodel, 2) * (-math.log(10000.0) / dmodel))
+        pe = torch.zeros(max_len, 1, dmodel)
         pe[:, 0, 0::2] = torch.sin(position * div_term)
         pe[:, 0, 1::2] = torch.cos(position * div_term)
         self.register_buffer('pe', pe)
 
-    def forward(x):    
+    def forward(self,x):    
         x_transp = x.transpose(0,1)
 
         x_pe = x_transp+self.pe[:x_transp.size(0)]
-        x_pe_transp = x.transpose(0,1)
+        x_pe_transp = x_pe.transpose(0,1)
 
         return self.dropout(x_pe_transp)
 
