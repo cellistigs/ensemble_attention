@@ -311,7 +311,7 @@ class CIFAR10AttentionEnsembleModule(CIFAR10_Models):
             logits.append(predictions)
         logittensor = self.posenc(torch.stack(logits,axis =1)) ## shape [batch,models,predictions]    
         weights = self.attnlayer(logittensor,logittensor) ## gives attention weights with shape [batch,queries, models]
-        self.log("attn/weightvar",torch.var(weights)) ## add logging for weights. 
+        self.log("attn/weightvar",torch.mean(torch.var(weights,axis = 0))) ## add logging for weights. 
         self.log("attn/weight0",weights[0,0,0]) ## add logging for weights. 
         self.log("attn/weight1",weights[0,0,1]) ## add logging for weights. 
         self.log("attn/weight2",weights[0,0,2]) ## add logging for weights. 
