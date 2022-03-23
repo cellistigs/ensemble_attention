@@ -11,14 +11,17 @@ from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger, TensorBoardLogger
 
-from ensemble_attention.module import CIFAR10Module,CIFAR10EnsembleModule,CIFAR10AttentionEnsembleModule
+from ensemble_attention.module import CIFAR10Module,CIFAR10EnsembleModule,CIFAR10AttentionEnsembleModule,CIFAR10AttentionEnsembleSkipModule,CIFAR10AttentionEnsembleMLPSkipModule
 
 from cifar10_ood.data import CIFAR10Data,CIFAR10_1Data,CINIC10_Data,CIFAR10_CData
 
 
 modules = {"base":CIFAR10Module,
         "ensemble":CIFAR10EnsembleModule,
-        "attention":CIFAR10AttentionEnsembleModule}
+        "attention":CIFAR10AttentionEnsembleModule,
+        "attentionskip":CIFAR10AttentionEnsembleSkipModule,
+        "attentionmlpskip":CIFAR10AttentionEnsembleMLPSkipModule,
+        }
 
 script_dir = os.path.abspath(os.path.dirname(__file__))
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
