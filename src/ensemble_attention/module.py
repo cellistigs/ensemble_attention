@@ -264,7 +264,7 @@ class CIFAR10EnsembleModule(CIFAR10_Models):
     def configure_optimizers(self):
         optimizer = torch.optim.SGD(
             self.models.parameters(),
-            lr=self.hparams.learning_rate*self.hparams.nb_models, ## when jointly training, we need to multiply the learning rate times the number of ensembles to make sure that the effective learning rate for each model stays the same. 
+            lr=self.hparams.learning_rate, ## when jointly training, we need to multiply the learning rate times the number of ensembles to make sure that the effective learning rate for each model stays the same. 
             weight_decay=self.hparams.weight_decay,
             momentum=0.9,
             nesterov=True,
@@ -311,6 +311,8 @@ class CIFAR10AttentionEnsembleModule(CIFAR10_Models):
             logits.append(predictions)
         logittensor = self.posenc(torch.stack(logits,axis =1)) ## shape [batch,models,predictions]    
         weights = self.attnlayer(logittensor,logittensor) ## gives attention weights with shape [batch,queries, models]
+        self.log("attn/normq",torch.linalg.matrix_norm(self.attnlayer.linear_q.weight))
+        self.log("attn/normk",torch.linalg.matrix_norm(self.attnlayer.linear_k.weight))
         self.log("attn/weightvar",torch.var(weights)) ## add logging for weights. 
         self.log("attn/weight0",weights[0,0,0]) ## add logging for weights. 
         self.log("attn/weight1",weights[0,0,1]) ## add logging for weights. 
