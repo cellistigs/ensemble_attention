@@ -393,6 +393,22 @@ class CIFAR10AttentionEnsembleModule(CIFAR10_Models):
         self.log("acc/train", accuracy*100)
         return loss
 
+    def validation_step(self, batch, batch_nb):
+        images, labels = batch
+        predictions,weights = self.forward(batch)
+        loss = self.criterion(predictions, labels)
+        accuracy = self.accuracy(predictions,labels)
+        self.log("loss/val", loss)
+        self.log("acc/val", accuracy)
+
+    def test_step(self, batch, batch_nb):
+        images, labels = batch
+        predictions,weights = self.forward(batch)
+        loss = self.criterion(predictions, labels)
+        accuracy = self.accuracy(predictions,labels)
+        self.log("loss/val", loss)
+        self.log("acc/val", accuracy)
+
     def configure_optimizers(self):
         optimizer = torch.optim.SGD(
             self.model.parameters(),
