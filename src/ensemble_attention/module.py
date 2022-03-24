@@ -264,7 +264,7 @@ class CIFAR10EnsembleModule(CIFAR10_Models):
     def configure_optimizers(self):
         optimizer = torch.optim.SGD(
             self.models.parameters(),
-            lr=self.hparams.learning_rate*self.hparams.nb_models, ## when jointly training, we need to multiply the learning rate times the number of ensembles to make sure that the effective learning rate for each model stays the same. 
+            lr=self.hparams.learning_rate, ## when jointly training, we need to multiply the learning rate times the number of ensembles to make sure that the effective learning rate for each model stays the same. 
             weight_decay=self.hparams.weight_decay,
             momentum=0.9,
             nesterov=True,
@@ -273,64 +273,6 @@ class CIFAR10EnsembleModule(CIFAR10_Models):
         scheduler = self.setup_scheduler(optimizer,total_steps)
         return [optimizer], [scheduler]
 
-class CIFAR10AttentionEnsembleMLPSkipModule(CIFAR10AttentionEnsembleModule):
-    def __init__(self,hparams):
-        super().__init__(hparams)
-        self.attnlayer = self.get_attnlayer(self.fc.weight.shape[1],hparams.embedding_dim) ## project from 10 dimensional output (CIFAR10 logits) to embedding dimension.
-        self.model = torch.nn.ModuleList([self.models,self.attnlayer])
-
-    def forward(self,batch):
-        """Move this all before the MLP layer; worth checking later.  
-
-        """
-        images, labels = batch
-        softmax = torch.nn.Softmax(dim = 2)
-
-        losses = []
-        accs = []
-        pre_logits = []
-        for m in self.models: ## take these logits, and build up another set of outputs on them. 
-            pre_logit = m.before_fc(images) ## these are just the pre-softmax outputs. 
-            pre_logits.append(pre_logits)
-        logittensor = self.posenc(torch.stack(logits,axis =1)) ## shape [batch,models,predictions]    
-        weights = self.attnlayer(logittensor,logittensor) ## gives attention weights with shape [batch,queries, models]
-        self.log("attn/weightvar",torch.mean(torch.var(weights,axis = 0))) ## add logging for weights. 
-        self.log("attn/weight0",weights[0,0,0]) ## add logging for weights. 
-        self.log("attn/weight1",weights[0,0,1]) ## add logging for weights. 
-        self.log("attn/weight2",weights[0,0,2]) ## add logging for weights. 
-        self.log("attn/weight3",weights[0,0,3]) ## add logging for weights. 
-    
-        weighted_outs = logittensor + torch.matmul(weights,logittensor) ## shape [batch,queries,predictions]
-        chosen = weighted_outs[:,0,:]
-        logits = self.models[0].fc(chosen)
-        acc = self.accuracy(logits,labels)
-        return weighted_outs[:,0,:], acc*100
-
-class CIFAR10AttentionEnsembleSkipModule(CIFAR10AttentionEnsembleModule):
-    def forward(self,batch):
-        """Use skip connections as well
-
-        """
-        images, labels = batch
-        softmax = torch.nn.Softmax(dim = 2)
-
-        losses = []
-        accs = []
-        logits = []
-        for m in self.models: ## take these logits, and build up another set of outputs on them. 
-            predictions = m(images) ## these are just the pre-softmax outputs. 
-            logits.append(predictions)
-        logittensor = self.posenc(torch.stack(logits,axis =1)) ## shape [batch,models,predictions]    
-        weights = self.attnlayer(logittensor,logittensor) ## gives attention weights with shape [batch,queries, models]
-        self.log("attn/weightvar",torch.mean(torch.var(weights,axis = 0))) ## add logging for weights. 
-        self.log("attn/weight0",weights[0,0,0]) ## add logging for weights. 
-        self.log("attn/weight1",weights[0,0,1]) ## add logging for weights. 
-        self.log("attn/weight2",weights[0,0,2]) ## add logging for weights. 
-        self.log("attn/weight3",weights[0,0,3]) ## add logging for weights. 
-        weighted_outs = logittensor + torch.matmul(weights,logittensor) ## shape [batch,queries,predictions]
-        chosen = weighted_outs[:,0,:]
-        acc = self.accuracy(chosen,labels)
-        return weighted_outs[:,0,:], acc*100
 
 class CIFAR10AttentionEnsembleModule(CIFAR10_Models):
     """Customized module to train a with attention. Initialized the same way as standard ensembles.  
@@ -370,6 +312,8 @@ class CIFAR10AttentionEnsembleModule(CIFAR10_Models):
             logits.append(predictions)
         logittensor = self.posenc(torch.stack(logits,axis =1)) ## shape [batch,models,predictions]    
         weights = self.attnlayer(logittensor,logittensor) ## gives attention weights with shape [batch,queries, models]
+        self.log("attn/normq",torch.linalg.matrix_norm(self.attnlayer.linear_q.weight))
+        self.log("attn/normk",torch.linalg.matrix_norm(self.attnlayer.linear_k.weight))
         self.log("attn/weightvar",torch.mean(torch.var(weights,axis = 0))) ## add logging for weights. 
         self.log("attn/weight0",weights[0,0,0]) ## add logging for weights. 
         self.log("attn/weight1",weights[0,0,1]) ## add logging for weights. 
@@ -421,6 +365,66 @@ class CIFAR10AttentionEnsembleModule(CIFAR10_Models):
         scheduler = self.setup_scheduler(optimizer,total_steps)
         return [optimizer], [scheduler]
 
+class CIFAR10AttentionEnsembleMLPSkipModule(CIFAR10AttentionEnsembleModule):
+    def __init__(self,hparams):
+        super().__init__(hparams)
+        pre_fc_dim = self.models[0].fc.weight.shape[1]
+        self.posenc = PosEncodings(pre_fc_dim,0.1,10)
+        self.attnlayer = self.get_attnlayer(pre_fc_dim,hparams.embedding_dim) ## project from 10 dimensional output (CIFAR10 logits) to embedding dimension.
+        self.model = torch.nn.ModuleList([self.models,self.attnlayer])
+
+    def forward(self,batch):
+        """Move this all before the MLP layer; worth checking later.  
+
+        """
+        images, labels = batch
+        softmax = torch.nn.Softmax(dim = 2)
+
+        losses = []
+        accs = []
+        pre_logits = []
+        for m in self.models: ## take these logits, and build up another set of outputs on them. 
+            pre_logit = m.before_fc(images) ## these are just the pre-softmax outputs. 
+            pre_logits.append(pre_logit)
+        prelogittensor = self.posenc(torch.stack(pre_logits,axis =1)) ## shape [batch,models,predictions]    
+        weights = self.attnlayer(prelogittensor,prelogittensor) ## gives attention weights with shape [batch,queries, models]
+        self.log("attn/weightvar",torch.mean(torch.var(weights,axis = 0))) ## add logging for weights. 
+        self.log("attn/weight0",weights[0,0,0]) ## add logging for weights. 
+        self.log("attn/weight1",weights[0,0,1]) ## add logging for weights. 
+        self.log("attn/weight2",weights[0,0,2]) ## add logging for weights. 
+        self.log("attn/weight3",weights[0,0,3]) ## add logging for weights. 
+    
+        weighted_outs = prelogittensor + torch.matmul(weights,prelogittensor) ## shape [batch,queries,predictions]
+        chosen = weighted_outs[:,0,:]
+        logits = self.models[0].fc(chosen)
+        acc = self.accuracy(logits,labels)
+        return weighted_outs[:,0,:], acc*100
+
+class CIFAR10AttentionEnsembleSkipModule(CIFAR10AttentionEnsembleModule):
+    def forward(self,batch):
+        """Use skip connections as well
+
+        """
+        images, labels = batch
+        softmax = torch.nn.Softmax(dim = 2)
+
+        losses = []
+        accs = []
+        logits = []
+        for m in self.models: ## take these logits, and build up another set of outputs on them. 
+            predictions = m(images) ## these are just the pre-softmax outputs. 
+            logits.append(predictions)
+        logittensor = self.posenc(torch.stack(logits,axis =1)) ## shape [batch,models,predictions]    
+        weights = self.attnlayer(logittensor,logittensor) ## gives attention weights with shape [batch,queries, models]
+        self.log("attn/weightvar",torch.mean(torch.var(weights,axis = 0))) ## add logging for weights. 
+        self.log("attn/weight0",weights[0,0,0]) ## add logging for weights. 
+        self.log("attn/weight1",weights[0,0,1]) ## add logging for weights. 
+        self.log("attn/weight2",weights[0,0,2]) ## add logging for weights. 
+        self.log("attn/weight3",weights[0,0,3]) ## add logging for weights. 
+        weighted_outs = logittensor + torch.matmul(weights,logittensor) ## shape [batch,queries,predictions]
+        chosen = weighted_outs[:,0,:]
+        acc = self.accuracy(chosen,labels)
+        return weighted_outs[:,0,:], acc*100
 class CIFAR10InterEnsembleModule(CIFAR10_Models):
     """Customized module to train a convex combination of a wide model and smaller models. 
 
