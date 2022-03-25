@@ -10,7 +10,7 @@ from .cifar10_models.resnet import resnet18, resnet34, resnet50, wideresnet18, w
 from .cifar10_models.wideresnet_28 import wideresnet28_10
 from .cifar10_models.vgg import vgg11_bn, vgg13_bn, vgg16_bn, vgg19_bn
 from .schduler import WarmupCosineLR
-from .layers import AttnComparison,PosEncodings
+from .layers import AttnComparison,PosEncodings,PosEncodingsSq
 
 all_classifiers = {
     "vgg11_bn": vgg11_bn,
@@ -343,7 +343,7 @@ class CIFAR10AttentionEnsembleModule(CIFAR10_Models):
         loss = self.criterion(predictions, labels)
         accuracy = self.accuracy(predictions,labels)
         self.log("loss/val", loss)
-        self.log("acc/val", accuracy)
+        self.log("acc/val", accuracy*100)
 
     def test_step(self, batch, batch_nb):
         images, labels = batch
@@ -351,7 +351,7 @@ class CIFAR10AttentionEnsembleModule(CIFAR10_Models):
         loss = self.criterion(predictions, labels)
         accuracy = self.accuracy(predictions,labels)
         self.log("loss/val", loss)
-        self.log("acc/val", accuracy)
+        self.log("acc/val", accuracy*100)
 
     def configure_optimizers(self):
         optimizer = torch.optim.SGD(
@@ -369,7 +369,7 @@ class CIFAR10AttentionEnsembleMLPSkipModule(CIFAR10AttentionEnsembleModule):
     def __init__(self,hparams):
         super().__init__(hparams)
         pre_fc_dim = self.models[0].fc.weight.shape[1]
-        self.posenc = PosEncodings(pre_fc_dim,0.1,10)
+        self.posenc = PosEncodingsSq(pre_fc_dim,0.1,10)
         self.attnlayer = self.get_attnlayer(pre_fc_dim,hparams.embedding_dim) ## project from 10 dimensional output (CIFAR10 logits) to embedding dimension.
         self.model = torch.nn.ModuleList([self.models,self.attnlayer])
 
@@ -425,6 +425,7 @@ class CIFAR10AttentionEnsembleSkipModule(CIFAR10AttentionEnsembleModule):
         chosen = weighted_outs[:,0,:]
         acc = self.accuracy(chosen,labels)
         return weighted_outs[:,0,:], acc*100
+
 class CIFAR10InterEnsembleModule(CIFAR10_Models):
     """Customized module to train a convex combination of a wide model and smaller models. 
 
