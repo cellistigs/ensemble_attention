@@ -277,7 +277,7 @@ class PosEncodingsSq(nn.Module):
         if max_len is None: 
             max_len = dmodel
         self.dropout = nn.Dropout(p=dropout)
-        all_squares = [torch.tensor(square(np.linspace(0,2*(1+i)*np.pi,dmodel))) for i in range(max_len)]
+        all_squares = [torch.tensor(-1+2*square(np.linspace(0,2*(1+i)*np.pi,dmodel))).float() for i in range(max_len)]
         pe = torch.stack(all_squares,axis = 0).unsqueeze(1)
 
         #position = torch.arange(max_len).unsqueeze(1)
