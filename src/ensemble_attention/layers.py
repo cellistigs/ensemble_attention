@@ -267,6 +267,33 @@ class AttnComparison(nn.Module):
 
         return weights
 
+class PosEncodingsSin(nn.Module):
+    """Positional encodings. Vary as sin waves in each model's outputs. Based on https://pytorch.org/tutorials/beginner/transformer_tutorial.html 
+
+    Returns the input plus positional encodings 
+    """
+    def __init__(self,dmodel, dropout=0.1,max_len = None):
+        super().__init__()
+        if max_len is None: 
+            max_len = dmodel
+        self.dropout = nn.Dropout(p=dropout)
+        all_squares = [torch.tensor(np.sin(np.linspace(0,4*(1+i)*np.pi,dmodel))).float() for i in range(max_len)]
+        pe = torch.stack(all_squares,axis = 0).unsqueeze(1)
+
+        #position = torch.arange(max_len).unsqueeze(1)
+        #div_term = torch.exp(torch.arange(0, dmodel, 2) * (-math.log(10000.0) / dmodel))
+        #pe = torch.zeros(max_len, 1, dmodel)
+        #pe[:, 0, 0::2] = torch.sin(position * div_term)
+        #pe[:, 0, 1::2] = torch.cos(position * div_term)
+        self.register_buffer('pe', pe)
+
+    def forward(self,x):    
+        x_transp = x.transpose(0,1)
+
+        x_pe = x_transp+self.pe[:x_transp.size(0)]
+        x_pe_transp = x_pe.transpose(0,1)
+
+        return self.dropout(x_pe_transp)
 class PosEncodingsSq(nn.Module):
     """Positional encodings. Vary as square waves in each model's outputs. Based on https://pytorch.org/tutorials/beginner/transformer_tutorial.html 
 
