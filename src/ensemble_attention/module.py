@@ -283,7 +283,7 @@ class CIFAR10AttentionEnsembleModule(CIFAR10_Models):
         self.nb_models = hparams.nb_models
 
         #self.criterion = torch.nn.CrossEntropyLoss()
-        self.criterion = torch.nn.NLLLoss(reduction = None)
+        self.criterion = torch.nn.NLLLoss(reduction = "none")
 
         self.accuracy = Accuracy()
 
@@ -314,7 +314,6 @@ class CIFAR10AttentionEnsembleModule(CIFAR10_Models):
             logits.append(predictions)
         logittensor = torch.stack(logits,axis =1)
 
-        import pdb; pdb.set_trace()
         ## Split into two branches: one to calculate attention weights and another to calculate output. 
         # branch 1: calculate attention weights.  
         #logittensor = self.posenc(logits,axis =1) ## shape [batch,models,predictions]    
@@ -328,7 +327,8 @@ class CIFAR10AttentionEnsembleModule(CIFAR10_Models):
         self.log("attn/weight3",weights[0,0,3]) ## add logging for weights. 
 
         ## branch 2: calculate probabilities before taking expectation, then return log probabilities. 
-        probs = torch.nn.Softmax(logittensor,dim=2)
+        softmax_probs = torch.nn.Softmax(dim=2)
+        probs = softmax_probs(logittensor)
         weighted_outs = torch.matmul(weights,probs) ## shape [batch,queries,predictions]
         chosen = weighted_outs[:,0,:]
         acc = self.accuracy(chosen,labels)
@@ -350,7 +350,6 @@ class CIFAR10AttentionEnsembleModule(CIFAR10_Models):
         logittensor = torch.stack(logits,axis =1) ## shape [batch,models,predictions]    
 
         ## Split into two branches: 1 to calculate weights, and another to get individual losses. 
-        import pdb; pdb.set_trace()
 
         ## Branch 1: weights. 
         weights = self.attnlayer(logittensor,logittensor) ## gives attention weights with shape [batch,queries, models]
@@ -358,11 +357,12 @@ class CIFAR10AttentionEnsembleModule(CIFAR10_Models):
 
 
         ## Branch 2: losses: 
-        logprobs = torch.nn.Logsoftmax(logittensor,dim=2)
+        logprobssoftmax = torch.nn.LogSoftmax(dim=2)
+        logprobs = logprobssoftmax(logittensor)
 
-        losses = torch.stack([self.criterion(logprobs[:,i,:], labels) for i in range(len(models))],axis = 1) ## this is a list of elements each of size (batch,models)
+        losses = torch.stack([self.criterion(logprobs[:,i,:], labels) for i in range(len(self.models))],axis = 1) ## this is a list of elements each of size (batch,models)
         weighted_loss = torch.mean(torch.sum(losses*loss_weights,axis = 1))
-        accuracies = torch.stack([self.accuracy(predictions[:,i,:],labels) for i in range(len(models))]) ## (models,)
+        accuracies = torch.stack([self.accuracy(logprobs[:,i,:],labels) for i in range(len(self.models))]) ## (models,)
         bulk_attn = torch.mean(loss_weights,dim = 0) # (models,)
         weighted_acc = torch.sum(accuracies*bulk_attn)
 
