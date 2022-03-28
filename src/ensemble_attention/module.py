@@ -313,7 +313,7 @@ class CIFAR10AttentionEnsembleModule(CIFAR10_Models):
             predictions = m(images) ## these are just the pre-softmax outputs. 
             logits.append(predictions)
         logittensor = torch.stack(logits,axis =1)
-        logittensor = self.posenc(logits,axis =1) ## shape [batch,models,predictions]    
+        logittensor = self.posenc(logittensor) ## shape [batch,models,predictions]    
 
         ## Split into two branches: one to calculate attention weights and another to calculate output. 
         # branch 1: calculate attention weights.  
@@ -348,7 +348,7 @@ class CIFAR10AttentionEnsembleModule(CIFAR10_Models):
             predictions = m(images) ## these are just the pre-softmax outputs. 
             logits.append(predictions)
         logittensor = torch.stack(logits,axis =1) ## shape [batch,models,predictions]    
-        logittensor = self.posenc(logits,axis =1) ## shape [batch,models,predictions]    
+        logittensor = self.posenc(logittensor) ## shape [batch,models,predictions]    
 
         ## Split into two branches: 1 to calculate weights, and another to get individual losses. 
 
