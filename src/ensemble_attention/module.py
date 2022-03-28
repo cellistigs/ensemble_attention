@@ -10,7 +10,7 @@ from .cifar10_models.resnet import resnet18, resnet34, resnet50, wideresnet18, w
 from .cifar10_models.wideresnet_28 import wideresnet28_10
 from .cifar10_models.vgg import vgg11_bn, vgg13_bn, vgg16_bn, vgg19_bn
 from .schduler import WarmupCosineLR
-from .layers import AttnComparison,PosEncodings,PosEncodingsSq
+from .layers import AttnComparison,PosEncodings,PosEncodingsSq,PosEncodingsSin
 
 all_classifiers = {
     "vgg11_bn": vgg11_bn,
@@ -287,7 +287,7 @@ class CIFAR10AttentionEnsembleModule(CIFAR10_Models):
 
         self.models = torch.nn.ModuleList([all_classifiers[self.hparams.classifier]() for i in range(self.nb_models)]) ## now we add several different instances of the model. 
         ## applied at logit layer... 
-        self.posenc = PosEncodings(10,0.1,10)
+        self.posenc = PosEncodingsSin(10,0.1,10)
         self.attnlayer = self.get_attnlayer(10,hparams.embedding_dim) ## project from 10 dimensional output (CIFAR10 logits) to embedding dimension.
         self.model = torch.nn.ModuleList([self.models,self.attnlayer])
         
@@ -369,7 +369,7 @@ class CIFAR10AttentionEnsembleMLPSkipModule(CIFAR10AttentionEnsembleModule):
     def __init__(self,hparams):
         super().__init__(hparams)
         pre_fc_dim = self.models[0].fc.weight.shape[1]
-        self.posenc = PosEncodingsSq(pre_fc_dim,0.1,10)
+        self.posenc = PosEncodingsSin(pre_fc_dim,0.1,10)
         self.attnlayer = self.get_attnlayer(pre_fc_dim,hparams.embedding_dim) ## project from 10 dimensional output (CIFAR10 logits) to embedding dimension.
         self.model = torch.nn.ModuleList([self.models,self.attnlayer])
 
