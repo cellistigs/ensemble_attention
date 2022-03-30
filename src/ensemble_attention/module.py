@@ -33,6 +33,7 @@ all_classifiers = {
 }
 
 
+
 class CIFAR10_Models(pl.LightningModule):
     """Abstract base class for CIFAR10 Models
 
@@ -460,6 +461,7 @@ class CIFAR10AttentionEnsembleSkipModule(CIFAR10AttentionEnsembleModule):
         chosen = weighted_outs[:,0,:]
         acc = self.accuracy(chosen,labels)
         return weighted_outs[:,0,:], acc*100
+
 class CIFAR10InterEnsembleModule(CIFAR10_Models):
     """Customized module to train a convex combination of a wide model and smaller models. 
 
