@@ -402,6 +402,9 @@ class CIFAR10AttentionEnsembleModule(CIFAR10_Models):
         return [optimizer], [scheduler]
 
 class CIFAR10AttentionEnsembleMLPSkipModule(CIFAR10AttentionEnsembleModule):
+    """There's actually no skip here- only mlp 
+
+    """
     def __init__(self,hparams):
         super().__init__(hparams)
         pre_fc_dim = self.models[0].fc.weight.shape[1]
@@ -424,7 +427,7 @@ class CIFAR10AttentionEnsembleMLPSkipModule(CIFAR10AttentionEnsembleModule):
         prelogittensor = torch.stack(pre_logits,axis =1)
 
         ## branch 1: generate weights
-        prelogittensor = self.posenc(prelogittensor) ## shape [batch,models,predictions]    
+        #prelogittensor = self.posenc(prelogittensor) ## shape [batch,models,predictions]    
         weights = self.attnlayer(prelogittensor,prelogittensor) ## gives attention weights with shape [batch,queries, models]
         self.log("attn/weightvar",torch.mean(torch.var(weights,axis = 0))) ## add logging for weights. 
         self.log("attn/weight0",weights[0,0,0]) ## add logging for weights. 
@@ -433,7 +436,7 @@ class CIFAR10AttentionEnsembleMLPSkipModule(CIFAR10AttentionEnsembleModule):
         self.log("attn/weight3",weights[0,0,3]) ## add logging for weights. 
 
         ## branch 2: generate logits
-        logittensor = torch.stack([submodel.fc(prelogittensor[:,i,:]) for submodel in self.models],axis = 1)
+        logittensor = torch.stack([submodel.fc(prelogittensor[:,i,:]) for i,submodel in enumerate(self.models)],axis = 1)
         softmax_probs = torch.nn.Softmax(dim=2)
         probs = softmax_probs(logittensor)
 
@@ -452,20 +455,20 @@ class CIFAR10AttentionEnsembleMLPSkipModule(CIFAR10AttentionEnsembleModule):
 
         losses = []
         accs = []
-        logits = []
+        pre_logits = []
         for m in self.models: ## take these logits, and build up another set of outputs on them. 
             pre_logit = m.before_fc(images) ## these are just the pre-softmax outputs. 
             pre_logits.append(pre_logit)
         prelogittensor = torch.stack(pre_logits,axis =1)
 
         ## branch 1: generate weights
-        prelogittensor = self.posenc(prelogittensor) ## shape [batch,models,predictions]    
+        #prelogittensor = self.posenc(prelogittensor) ## shape [batch,models,predictions]    
         weights = self.attnlayer(prelogittensor,prelogittensor) ## gives attention weights with shape [batch,queries, models]
         loss_weights = weights[:,0,:] ## batch, models
 
 
         ## Branch 2: losses: 
-        logittensor = torch.stack([submodel.fc(prelogittensor[:,i,:]) for submodel in self.models],axis = 1)
+        logittensor = torch.stack([submodel.fc(prelogittensor[:,i,:]) for i,submodel in enumerate(self.models)],axis = 1)
         logprobssoftmax = torch.nn.LogSoftmax(dim=2)
         logprobs = logprobssoftmax(logittensor)
 
