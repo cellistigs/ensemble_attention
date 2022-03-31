@@ -433,7 +433,6 @@ class CIFAR10AttentionEnsembleMLPSkipModule(CIFAR10AttentionEnsembleModule):
         prelogittensor = torch.stack(pre_logits,axis =1)
 
         ## branch 1: generate weights
-        if self.
         #prelogittensor = self.posenc(prelogittensor) ## shape [batch,models,predictions]    
         weights = self.attnlayer(prelogittensor,prelogittensor) ## gives attention weights with shape [batch,queries, models]
         self.log("attn/weightvar",torch.mean(torch.var(weights,axis = 0))) ## add logging for weights. 
