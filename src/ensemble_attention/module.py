@@ -359,7 +359,7 @@ class CIFAR10AttentionEnsembleModule(CIFAR10_Models):
             loss_weights = weights[:,0,:] ## batch, models
         else:    
             select = torch.randint(0,len(self.models),(images.shape[0],))
-            loss_weights = torch.zeroes((images.shape[0],len(self.models)))
+            loss_weights = torch.zeros((images.shape[0],len(self.models)))
             loss_weights[range(images.shape[0]),select] = 1
 
 
