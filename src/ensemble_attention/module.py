@@ -358,8 +358,8 @@ class CIFAR10AttentionEnsembleModule(CIFAR10_Models):
             weights = self.attnlayer(logittensor,logittensor) ## gives attention weights with shape [batch,queries, models]
             loss_weights = weights[:,0,:] ## batch, models
         else:    
-            select = torch.randint(0,len(self.models),(images.shape[0],))
-            loss_weights = torch.zeros((images.shape[0],len(self.models)))
+            select = torch.randint(0,len(self.models),(images.shape[0],),device = self.device)
+            loss_weights = torch.zeros((images.shape[0],len(self.models)),device = self.device)
             loss_weights[range(images.shape[0]),select] = 1
 
 
