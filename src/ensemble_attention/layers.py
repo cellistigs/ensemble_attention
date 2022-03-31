@@ -267,6 +267,45 @@ class AttnComparison(nn.Module):
 
         return weights
 
+class AttnMLPComparison(nn.Module):
+    """Like the baseline AttnComparison function above, but with a single layer MLP instead of a linear projection into the attention space. 
+
+    """
+    def __init__(self,in_features,out_features,hidden_dim = 1000):
+        """
+        """
+        super().__init__()
+        self.mlp_input_q = nn.Linear(in_features,hidden_dim)
+        self.mlp_input_k = nn.Linear(in_features,hidden_dim)
+        self.relu = torch.nn.ReLU()
+        self.mlp_output_q = nn.Linear(hidden_dim,out_features)
+        self.mlp_output_k = nn.Linear(hidden_dim,out_features)
+
+        self.scale = out_features**(-0.5) ## scaling for dot product attention. 
+        initialize_xavier(self.mlp_input_q)
+        initialize_xavier(self.mlp_input_k)
+        initialize_xavier(self.mlp_output_q)
+        initialize_xavier(self.mlp_output_k)
+
+    def forward(self,q,k):    
+        """Calculates scaled dot product attention between queries and keys after applying a learned linear transformation to each. 
+        Assumes q is shape (batch,nb_queries,in_features), and k has shape (batch,nb_keys,in_features). 
+        """
+        q_proj = self.mlp_output_q(self.relu(self.mlp_input_q(q))) # batch,nb_queries,out_features
+        k_proj = self.mlp_output_k(self.relu(self.mlp_input_k(k))) # batch,nb_keys,out_features
+
+        ## transpose k
+        k_transp = k_proj.transpose(1,2) 
+
+        ## scale q before applying dot product. 
+        q_proj.mul_(self.scale)
+
+        ## take dot product: 
+        scales = torch.matmul(q_proj,k_transp) # batch,nb_queries,nb_keys
+        weights = torch.softmax(scales,dim = 2)
+
+        return weights
+
 class PosEncodingsSin(nn.Module):
     """Positional encodings. Vary as sin waves in each model's outputs. Based on https://pytorch.org/tutorials/beginner/transformer_tutorial.html 
 

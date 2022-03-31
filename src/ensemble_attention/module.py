@@ -295,9 +295,9 @@ class CIFAR10AttentionEnsembleModule(CIFAR10_Models):
         self.model = torch.nn.ModuleList([self.models,self.attnlayer])
         
     def get_attnlayer(self,in_dim,out_dim):
-        """get the attention layer we will use
+        """get the attention layer we will use; changed to MLP for right now. 
         """
-        return AttnComparison(in_dim,out_dim)
+        return AttnMLPComparison(in_dim,out_dim)
 
 
     def forward(self,batch): 
@@ -319,8 +319,8 @@ class CIFAR10AttentionEnsembleModule(CIFAR10_Models):
         ## Split into two branches: one to calculate attention weights and another to calculate output. 
         # branch 1: calculate attention weights.  
         weights = self.attnlayer(logittensor,logittensor) ## gives attention weights with shape [batch,queries, models]
-        self.log("attn/normq",torch.linalg.matrix_norm(self.attnlayer.linear_q.weight))
-        self.log("attn/normk",torch.linalg.matrix_norm(self.attnlayer.linear_k.weight))
+        #self.log("attn/normq",torch.linalg.matrix_norm(self.attnlayer.linear_q.weight))
+        #self.log("attn/normk",torch.linalg.matrix_norm(self.attnlayer.linear_k.weight))
         self.log("attn/weightvar",torch.mean(torch.var(weights,axis = 0))) ## add logging for weights. 
         self.log("attn/weight0",weights[0,0,0]) ## add logging for weights. 
         self.log("attn/weight1",weights[0,0,1]) ## add logging for weights. 
