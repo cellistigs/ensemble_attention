@@ -354,8 +354,13 @@ class CIFAR10AttentionEnsembleModule(CIFAR10_Models):
         ## Split into two branches: 1 to calculate weights, and another to get individual losses. 
 
         ## Branch 1: weights. 
-        weights = self.attnlayer(logittensor,logittensor) ## gives attention weights with shape [batch,queries, models]
-        loss_weights = weights[:,0,:] ## batch, models
+        if self.current_epoch > self.hparams.start_attention: ## 
+            weights = self.attnlayer(logittensor,logittensor) ## gives attention weights with shape [batch,queries, models]
+            loss_weights = weights[:,0,:] ## batch, models
+        else:    
+            select = torch.randint(0,len(self.models),(images.shape[0],))
+            loss_weights = torch.zeroes((images.shape[0],len(self.models)))
+            loss_weights[range(images.shape[0]),select] = 1
 
 
         ## Branch 2: losses: 
@@ -428,6 +433,7 @@ class CIFAR10AttentionEnsembleMLPSkipModule(CIFAR10AttentionEnsembleModule):
         prelogittensor = torch.stack(pre_logits,axis =1)
 
         ## branch 1: generate weights
+        if self.
         #prelogittensor = self.posenc(prelogittensor) ## shape [batch,models,predictions]    
         weights = self.attnlayer(prelogittensor,prelogittensor) ## gives attention weights with shape [batch,queries, models]
         self.log("attn/weightvar",torch.mean(torch.var(weights,axis = 0))) ## add logging for weights. 
