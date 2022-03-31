@@ -469,8 +469,14 @@ class CIFAR10AttentionEnsembleMLPSkipModule(CIFAR10AttentionEnsembleModule):
 
         ## branch 1: generate weights
         #prelogittensor = self.posenc(prelogittensor) ## shape [batch,models,predictions]    
-        weights = self.attnlayer(prelogittensor,prelogittensor) ## gives attention weights with shape [batch,queries, models]
-        loss_weights = weights[:,0,:] ## batch, models
+        if self.current_epoch > self.hparams.start_attention: ##
+            weights = self.attnlayer(prelogittensor,prelogittensor) ## gives attention weights with shape [batch,queries, models]
+            loss_weights = weights[:,0,:] ## batch, models
+        else:
+            select = torch.randint(0,len(self.models),(images.shape[0],),device = self.device)
+            loss_weights = torch.zeros((images.shape[0],len(self.models)),device = self.device)
+            loss_weights[range(images.shape[0]),select] = 1
+
 
 
         ## Branch 2: losses: 
