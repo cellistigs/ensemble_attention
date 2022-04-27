@@ -265,7 +265,7 @@ class CIFAR10EnsembleModule(CIFAR10_Models):
     def configure_optimizers(self):
         optimizer = torch.optim.SGD(
             self.models.parameters(),
-            lr=self.hparams.learning_rate, ## when jointly training, we need to multiply the learning rate times the number of ensembles to make sure that the effective learning rate for each model stays the same. 
+            lr=self.hparams.learning_rate*len(self.models), ## when jointly training, we need to multiply the learning rate times the number of ensembles to make sure that the effective learning rate for each model stays the same. 
             weight_decay=self.hparams.weight_decay,
             momentum=0.9,
             nesterov=True,
