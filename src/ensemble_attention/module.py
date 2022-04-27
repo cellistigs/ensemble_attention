@@ -84,7 +84,7 @@ class CIFAR10_Models(pl.LightningModule):
         return scheduler    
 
 class CIFAR10LinearGroupModule(CIFAR10_Models):
-    """Replaces the final layer with a LogSoftmaxGroupLinear layer, and correspondingly changes the loss. . 
+    """Replaces the final layer with a LogSoftmaxGroupLinear layer, and correspondingly changes the loss. 
 
     """
     def __init__(self, hparams):
