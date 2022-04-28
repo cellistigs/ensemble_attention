@@ -11,6 +11,7 @@ from .cifar10_models.wideresnet_28 import wideresnet28_10
 from .cifar10_models.vgg import vgg11_bn, vgg13_bn, vgg16_bn, vgg19_bn
 from .schduler import WarmupCosineLR
 from .layers import AttnComparison,PosEncodings,PosEncodingsSq,PosEncodingsSin
+from .metrics import Model_D_KL
 
 all_classifiers = {
     "vgg11_bn": vgg11_bn,
@@ -265,8 +266,8 @@ class CIFAR10EnsembleModule(CIFAR10_Models):
     def configure_optimizers(self):
         optimizer = torch.optim.SGD(
             self.models.parameters(),
-            #lr=self.hparams.learning_rate*len(self.models), ## when jointly training, we need to multiply the learning rate times the number of ensembles to make sure that the effective learning rate for each model stays the same. 
-            lr=self.hparams.learning_rate, ## when jointly training, we need to multiply the learning rate times the number of ensembles to make sure that the effective learning rate for each model stays the same. 
+            lr=self.hparams.learning_rate*len(self.models), ## when jointly training, we need to multiply the learning rate times the number of ensembles to make sure that the effective learning rate for each model stays the same. 
+            #lr=self.hparams.learning_rate, ## when jointly training, we need to multiply the learning rate times the number of ensembles to make sure that the effective learning rate for each model stays the same. 
             weight_decay=self.hparams.weight_decay,
             momentum=0.9,
             nesterov=True,
@@ -300,6 +301,42 @@ class CIFAR10EnsembleModule(CIFAR10_Models):
                 "name": "learning_rate",
                 }
         return scheduler    
+
+class CIFAR10EnsembleDKLModule(CIFAR10EnsembleModule):
+    """Formulation of the ensemble as a regularized single model with variable weight on regularization. 
+
+    """
+    def __init__(self,hparams):
+        super().__init__(hparams)
+        self.traincriterion = torch.nn.NLL()
+        self.kl = Model_D_KL("torch")
+
+    def training_step(self, batch, batch_nb):
+        """When we train, we want to train independently. 
+        """
+        
+        images, labels = batch
+        losses = []
+        accs = []
+        for m in self.models:
+            predictions = m(images) ## this just a bunch of unnormalized scores? 
+            normed = softmax(predictions)
+            softmaxes.append(normed)
+            #mloss = self.criterion(predictions, labels)
+            #accuracy = self.accuracy(predictions,labels)
+            #losses.append(mloss)
+            #accs.append(accuracy) 
+        logoutput = torch.log(torch.mean(torch.stack(softmaxes),dim = 0))
+        mloss = self.criterion(logoutput, labels)
+        dklloss = torch.mean(self.kl(softmaxes,labels))
+        loss = mloss + self.gamma*dklloss ## with gamma equal to 1, this is the same as the standard ensemble training loss (independent). 
+        accuracy = self.accuracy(logoutput,labels)
+
+        self.log("loss/train", loss)
+        self.log("acc/train", avg_accuracy*100)
+        self.log("reg/dkl",dklloss)
+        return loss
+
 
 class CIFAR10AttentionEnsembleModule(CIFAR10_Models):
     """Customized module to train a with attention. Initialized the same way as standard ensembles.  
