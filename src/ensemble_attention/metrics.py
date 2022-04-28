@@ -1,5 +1,6 @@
 ## Tools to help calculate calibration related metrics given a predictions and labels.  
 import numpy as np
+import torch
 
 class BrierScoreData(object):
     """Calculates brier score. 
@@ -214,6 +215,50 @@ class CalibrationData(object):
         correct = maxind == target
         binind = map(self.getbin,maxprob)
         return {"maxprob":maxprob,"maxind":maxind,"target":target,"correct":correct,"bin":binind}
+
+class Model_D_KL(object):
+    """Calculate the KL divergence between the empirical distribution of log probs output by individual model predictions that together are averaged to form an ensemble. 
+
+    :param cost_format: output either "torch", or "numpy", indicating if we want to create a metric for training on torch tensors or experimenting with numpy arrays. 
+    """
+    def __init__(self,cost_format):
+        """Decide if we're going to use torch or numpy kl:
+        """
+        assert cost_format in ["torch","numpy"], "format must be either 'torch' or 'numpy'"
+        self.format = cost_format
+
+    def kl(self,probs,labels):     
+       if self.format == "numpy":
+           return self.kl_numpy(probs,labels)
+       elif self.format == "torch":
+           return self.kl_torch(probs,labels)
+  
+    def kl_numpy(self,probs,labels):    
+        """
+        :param probs: an iterable of probabilities, each of which has identical shape (batch, class)
+        :param labels: a set of labels of shape (batch,)
+        :return: kls of shape (batch,)
+        """
+        M = len(probs) 
+        prob_array = np.stack(probs,axis = -1)
+        correct_probs = prob_array[np.arange(prob_array.shape[0]),labels,:] # shape of (batch,models)
+        normalization = np.sum(correct_probs,axis = 1)
+        normed_probs = correct_probs/normalization[:,None]
+        kls = (1./M)*np.sum(np.log(1./M)-np.log(normed_probs),axis = 1) 
+        return kls
+
+    def kl_torch(self,probs,labels):    
+        """
+        :param probs: an iterable of probabilities, each of which has identical shape (batch, class)
+        :param labels: a set of labels of shape (batch,)
+        """
+        M = len(probs) 
+        prob_array = torch.stack(probs,axis = -1)
+        correct_probs = prob_array[np.arange(prob_array.shape[0]),labels,:] # shape of (batch,models)
+        normalization = torch.sum(correct_probs,axis = 1)[:,None]
+        normed_probs = torch.div(correct_probs,normalization)
+        kls = (1./M)*torch.sum(torch.sub(np.log(1./M),torch.log(normed_probs)),axis = 1) 
+        return kls
 
 
 
