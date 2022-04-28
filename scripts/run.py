@@ -49,7 +49,7 @@ def custom_eval(model,ind_data,ood_data,device,softmax = True):
         for idx,batch in tqdm(enumerate(ind_data.test_dataloader())):
             ims = batch[0].to(device)
             labels = batch[1].to(device)
-            pred,label = model.calibration((ims,labels),use_softmax= softmax)
+            pred,label = model.calibration((ims,labels))
             ## to cpu
             predarray = pred.cpu().numpy() ## 256x10
             labelarray = label.cpu().numpy() ## 
@@ -58,7 +58,7 @@ def custom_eval(model,ind_data,ood_data,device,softmax = True):
         for idx,batch in tqdm(enumerate(ood_data.test_dataloader())):
             ims = batch[0].to(device)
             labels = batch[1].to(device)
-            pred,label = model.calibration((ims,labels),use_softmax = softmax)
+            pred,label = model.calibration((ims,labels))
             ## to cpu
             predarray = pred.cpu().numpy() ## 256x10
             labelarray = label.cpu().numpy() ## 
