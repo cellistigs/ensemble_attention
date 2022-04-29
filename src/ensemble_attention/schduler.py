@@ -74,15 +74,15 @@ class WarmupCosineLR(_LRScheduler):
                 UserWarning,
             )
 
-        if self.last_epoch == 0:
+        if self.last_epoch == 0: # initial step. 
             return [self.warmup_start_lr] * len(self.base_lrs)
-        elif self.last_epoch < self.warmup_epochs:
+        elif self.last_epoch < self.warmup_epochs: # warmup. 
             return [
                 group["lr"]
                 + (base_lr - self.warmup_start_lr) / (self.warmup_epochs - 1)
                 for base_lr, group in zip(self.base_lrs, self.optimizer.param_groups)
             ]
-        elif self.last_epoch == self.warmup_epochs:
+        elif self.last_epoch == self.warmup_epochs: # end warmup.
             return self.base_lrs
         elif (self.last_epoch - 1 - self.max_epochs) % (
             2 * (self.max_epochs - self.warmup_epochs)
