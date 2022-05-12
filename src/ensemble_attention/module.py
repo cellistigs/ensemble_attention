@@ -285,7 +285,7 @@ class CIFAR10EnsembleModule(CIFAR10_Models):
                     optimizer,
                     warmup_epochs=total_steps*0.3,
                     max_epochs=total_steps,
-                    warmup_start_lr = 1e-8*len(self.models)
+                    warmup_start_lr = 1e-8*len(self.models),
                     eta_min = 1e-8*len(self.models)
                 ),
                 "interval": "step",
@@ -308,16 +308,19 @@ class CIFAR10EnsembleDKLModule(CIFAR10EnsembleModule):
     """
     def __init__(self,hparams):
         super().__init__(hparams)
-        self.traincriterion = torch.nn.NLL()
+        self.traincriterion = torch.nn.NLLLoss()
         self.kl = Model_D_KL("torch")
+        self.gamma = hparams.gamma
 
     def training_step(self, batch, batch_nb):
         """When we train, we want to train independently. 
         """
+        softmax = torch.nn.Softmax(dim = 1)
         
         images, labels = batch
         losses = []
         accs = []
+        softmaxes = []
         for m in self.models:
             predictions = m(images) ## this just a bunch of unnormalized scores? 
             normed = softmax(predictions)
@@ -327,13 +330,13 @@ class CIFAR10EnsembleDKLModule(CIFAR10EnsembleModule):
             #losses.append(mloss)
             #accs.append(accuracy) 
         logoutput = torch.log(torch.mean(torch.stack(softmaxes),dim = 0))
-        mloss = self.criterion(logoutput, labels)
-        dklloss = torch.mean(self.kl(softmaxes,labels))
+        mloss = self.traincriterion(logoutput, labels)
+        dklloss = torch.mean(self.kl.kl(softmaxes,labels))
         loss = mloss + self.gamma*dklloss ## with gamma equal to 1, this is the same as the standard ensemble training loss (independent). 
         accuracy = self.accuracy(logoutput,labels)
 
         self.log("loss/train", loss)
-        self.log("acc/train", avg_accuracy*100)
+        self.log("acc/train", accuracy*100)
         self.log("reg/dkl",dklloss)
         return loss
 
