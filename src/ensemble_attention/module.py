@@ -340,7 +340,43 @@ class CIFAR10EnsembleDKLModule(CIFAR10EnsembleModule):
         self.log("reg/dkl",dklloss)
         return loss
 
+    def configure_optimizers(self):
+        optimizer = torch.optim.SGD(
+            self.models.parameters(),
+            lr=self.hparams.learning_rate, ## when jointly training, we need to multiply the learning rate times the number of ensembles to make sure that the effective learning rate for each model stays the same. 
+            #lr=self.hparams.learning_rate, ## when jointly training, we need to multiply the learning rate times the number of ensembles to make sure that the effective learning rate for each model stays the same. 
+            weight_decay=self.hparams.weight_decay,
+            momentum=0.9,
+            nesterov=True,
+        )
+        total_steps = self.hparams.max_epochs * len(self.train_dataloader())
+        scheduler = self.setup_scheduler(optimizer,total_steps)
+        return [optimizer], [scheduler]
 
+    def setup_scheduler(self,optimizer,total_steps):
+        """Chooses between the cosine learning rate scheduler that came with the repo, or step scheduler based on wideresnet training.For the ensemble, we need to manually set the warmup and eta_min parameters to maintain the right scaling for individual models.  
+        """
+        if self.hparams.scheduler in [None,"cosine"]: 
+            scheduler = {
+                "scheduler": WarmupCosineLR(
+                    optimizer,
+                    warmup_epochs=total_steps*0.3,
+                    max_epochs=total_steps,
+                    warmup_start_lr = 1e-8,
+                    eta_min = 1e-8                ),
+                "interval": "step",
+                "name": "learning_rate",
+            }
+        elif self.hparams.scheduler == "step":    
+            scheduler = {
+                "scheduler": torch.optim.lr_scheduler.MultiStepLR(
+                    optimizer, milestones = [60,120,160], gamma = 0.2, last_epoch=-1
+                ),
+                "interval": "epoch",
+                "frequency":1,
+                "name": "learning_rate",
+                }
+        return scheduler    
 class CIFAR10AttentionEnsembleModule(CIFAR10_Models):
     """Customized module to train a with attention. Initialized the same way as standard ensembles.  
 
