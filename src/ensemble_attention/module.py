@@ -362,8 +362,9 @@ class CIFAR10EnsembleDKLModule(CIFAR10EnsembleModule):
                     optimizer,
                     warmup_epochs=total_steps*0.3,
                     max_epochs=total_steps,
-                    warmup_start_lr = 1e-8,
-                    eta_min = 1e-8                ),
+                    warmup_start_lr = 1e-8*len(self.models),
+                    eta_min = 1e-8*len(self.models)
+                    ),
                 "interval": "step",
                 "name": "learning_rate",
             }
