@@ -258,6 +258,8 @@ class CIFAR10EnsembleModule(CIFAR10_Models):
             accs.append(accuracy) 
         loss = sum(losses)/self.nb_models ## calculate the sum with pure python functions.    
         avg_accuracy = sum(accs)/self.nb_models
+        lr = self.lr_schedulers().get_last_lr()
+        self.log("lr/lr",lr)
 
         self.log("loss/train", loss)
         self.log("acc/train", avg_accuracy*100)
@@ -335,6 +337,8 @@ class CIFAR10EnsembleDKLModule(CIFAR10EnsembleModule):
         loss = mloss + self.gamma*dklloss ## with gamma equal to 1, this is the same as the standard ensemble training loss (independent). 
         accuracy = self.accuracy(logoutput,labels)
 
+        lr = self.trainer.lr_schedulers[0]["scheduler"].get_last_lr()[-1]
+        self.log("lr/lr",lr)
         self.log("loss/train", loss)
         self.log("acc/train", accuracy*100)
         self.log("reg/dkl",dklloss)
@@ -344,7 +348,7 @@ class CIFAR10EnsembleDKLModule(CIFAR10EnsembleModule):
         optimizer = torch.optim.SGD(
             self.models.parameters(),
             #lr=self.hparams.learning_rate, ## when jointly training, we need to multiply the learning rate times the number of ensembles to make sure that the effective learning rate for each model stays the same. 
-            lr=self.hparams.learning_rate*len(self.models), ## when jointly training, we need to multiply the learning rate times the number of ensembles to make sure that the effective learning rate for each model stays the same. 
+            lr=self.hparams.learning_rate, ## when jointly training, we need to multiply the learning rate times the number of ensembles to make sure that the effective learning rate for each model stays the same. 
             weight_decay=self.hparams.weight_decay,
             momentum=0.9,
             nesterov=True,
@@ -362,8 +366,8 @@ class CIFAR10EnsembleDKLModule(CIFAR10EnsembleModule):
                     optimizer,
                     warmup_epochs=total_steps*0.3,
                     max_epochs=total_steps,
-                    warmup_start_lr = 1e-8*len(self.models),
-                    eta_min = 1e-8*len(self.models)
+                    warmup_start_lr = 1e-8,
+                    eta_min = 1e-8
                     ),
                 "interval": "step",
                 "name": "learning_rate",
