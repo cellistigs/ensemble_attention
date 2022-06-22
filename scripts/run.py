@@ -152,7 +152,7 @@ def main(args):
         ood_data = CIFAR10_CData(args)
 
     ## do we train the model or not? 
-    if bool(args.test_phase):
+    if bool(args.test_phase) or bool(args.random_eval):
         pass
     else:
         trainer.fit(model, cifar10data)
