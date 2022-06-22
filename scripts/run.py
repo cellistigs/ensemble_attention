@@ -124,6 +124,9 @@ def main(args):
             model = modules[args.module].load_from_checkpoint(checkpoint_path=args.checkpoint,hparams = args)
         elif args.module == "attention":    
             model = modules[args.module].load_from_checkpoint(checkpoint_path=args.checkpoint,hparams = args)
+        ## Really should be the case for anything
+        else:    
+            model = modules[args.module].load_from_checkpoint(checkpoint_path=args.checkpoint,hparams = args)
     else: ## if training from scratch or loading from state dict:    
         model = modules[args.module](**all_args)
         ## if loading from state dictionary instead of checkpoint: 
