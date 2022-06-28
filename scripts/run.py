@@ -44,15 +44,15 @@ def traindata_eval(model,ind_data,device,softmax = True):
     ## model, cifart10data,cifart10_1data,
     model.eval()
     with torch.no_grad():
-        for idx,batch in tqdm(enumerate(ind_data.train_dataloader())):
+        for idx,batch in tqdm(enumerate(ind_data.train_dataloader(shuffle=False,aug=False))):
             ims = batch[0].to(device)
             labels = batch[1].to(device)
             pred,label = model.calibration((ims,labels))
             ## to cpu
             predarray = pred.cpu().numpy() ## 256x10
             labelarray = label.cpu().numpy() ## 
-            all_preds_ind.append(predarray)
-            all_labels_ind.append(labelarray)
+            all_preds.append(predarray)
+            all_labels.append(labelarray)
 
     all_preds_array = np.concatenate(all_preds,axis = 0)
     all_labels_array = np.concatenate(all_labels,axis = 0)
