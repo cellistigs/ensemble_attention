@@ -135,6 +135,30 @@ class CIFAR10LinearGroupModule(CIFAR10_Models):
         scheduler = self.setup_scheduler(optimizer,total_steps)
         return [optimizer], [scheduler]
 
+class CIFAR10RandDist(CIFAR10Module):
+    """Alternative module to use for random distillation. Trains based on the softmax output of another network. Reported accuracy is based on 
+
+    """
+    def __init__(self, hparams):
+        super().__init__(hparams)
+        print(hparams)
+        print(self.hparams)
+
+        # TODO train on the square loss, but eval classification accuracy.  
+        ## Here, forward outputs the pre-softmax outputs. keep these in order to fit better.  
+        self.criterion = torch.nn.MSELoss()
+        self.accuracy = Accuracy()
+
+        self.model = all_classifiers[self.hparams.classifier]()
+
+    def forward(self, batch):
+        images, labels = batch
+        predictions = self.model(images)
+        # TODO eval on the labels, not the softmaxes of labels. . 
+        loss = self.criterion(predictions, labels)
+        accuracy = self.accuracy(predictions, torch.argmax(labels,axis = 1))
+        return loss, accuracy * 100
+
 class CIFAR10Module(CIFAR10_Models):
     def __init__(self, hparams):
         super().__init__(hparams)
@@ -150,7 +174,7 @@ class CIFAR10Module(CIFAR10_Models):
         images, labels = batch
         predictions = self.model(images)
         loss = self.criterion(predictions, labels)
-        accuracy = self.accuracy(predictions, labels)
+        accuracy = self.accuracy(predictions,labels)
         return loss, accuracy * 100
 
     def calibration(self,batch,use_softmax = True):
