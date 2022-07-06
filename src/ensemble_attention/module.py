@@ -209,7 +209,6 @@ class CIFAR10RandDist(CIFAR10Module):
         """Train with linear layer labels, not integer. 
         """
         images, labels = batch
-        import pdb; pdb.set_trace()
         predictions = self.model(images)
         # TODO eval on the labels, not the softmaxes of labels. . 
         loss = self.traincriterion(predictions, labels)
