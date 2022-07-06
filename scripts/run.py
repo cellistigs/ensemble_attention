@@ -28,7 +28,7 @@ modules = {"base":CIFAR10Module,
 script_dir = os.path.abspath(os.path.dirname(__file__))
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def traindata_eval(model,ind_data,device,softmax = True):   
+def traindata_eval(model,ind_data,device,softmax = False):   
     """Custom evaluation function to output logits as arrays from models given the trained model on the training data. Used to generate training examples from random labels. 
 
     :param model: a model from interpensembles.modules. Should have a method "calibration" that outputs predictions (logits) and labels given images and labels. 
@@ -48,7 +48,8 @@ def traindata_eval(model,ind_data,device,softmax = True):
         for idx,batch in tqdm(enumerate(ind_data.train_dataloader(shuffle=False,aug=False))):
             ims = batch[0].to(device)
             labels = batch[1].to(device)
-            pred,label = model.calibration((ims,labels))
+            ## TODO change this to not pred, but linear. 
+            pred,label = model.calibration((ims,labels),use_softmax=softmax)
             ## to cpu
             predarray = pred.cpu().numpy() ## 256x10
             labelarray = label.cpu().numpy() ## 
@@ -82,7 +83,7 @@ def custom_eval(model,ind_data,ood_data,device,softmax = True):
         for idx,batch in tqdm(enumerate(ind_data.test_dataloader())):
             ims = batch[0].to(device)
             labels = batch[1].to(device)
-            pred,label = model.calibration((ims,labels))
+            pred,label = model.calibration((ims,labels),use_softmax=softmax)
             ## to cpu
             predarray = pred.cpu().numpy() ## 256x10
             labelarray = label.cpu().numpy() ## 
@@ -91,7 +92,7 @@ def custom_eval(model,ind_data,ood_data,device,softmax = True):
         for idx,batch in tqdm(enumerate(ood_data.test_dataloader())):
             ims = batch[0].to(device)
             labels = batch[1].to(device)
-            pred,label = model.calibration((ims,labels))
+            pred,label = model.calibration((ims,labels),use_softmax=softmax)
             ## to cpu
             predarray = pred.cpu().numpy() ## 256x10
             labelarray = label.cpu().numpy() ## 
