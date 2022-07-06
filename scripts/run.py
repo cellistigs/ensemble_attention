@@ -11,7 +11,7 @@ from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger, TensorBoardLogger
 
-from ensemble_attention.module import CIFAR10Module,CIFAR10EnsembleModule,CIFAR10AttentionEnsembleModule,CIFAR10AttentionEnsembleSkipModule,CIFAR10AttentionEnsembleMLPSkipModule,CIFAR10EnsembleDKLModule
+from ensemble_attention.module import CIFAR10Module,CIFAR10EnsembleModule,CIFAR10AttentionEnsembleModule,CIFAR10AttentionEnsembleSkipModule,CIFAR10AttentionEnsembleMLPSkipModule,CIFAR10EnsembleDKLModule,CIFAR10RandDist
 
 from cifar10_ood.data import CIFAR10Data,CIFAR10_1Data,CINIC10_Data,CIFAR10_CData
 
@@ -22,6 +22,7 @@ modules = {"base":CIFAR10Module,
         "attention":CIFAR10AttentionEnsembleModule,
         "attentionskip":CIFAR10AttentionEnsembleSkipModule,
         "attentionmlpskip":CIFAR10AttentionEnsembleMLPSkipModule,
+        "randdist":CIFAR10RandDist
         }
 
 script_dir = os.path.abspath(os.path.dirname(__file__))
