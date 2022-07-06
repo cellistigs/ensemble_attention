@@ -1,6 +1,6 @@
 import pytorch_lightning as pl
 import torch
-from pytorch_lightning.metrics import Accuracy
+from pytorch_lightning.metrics import Accuracy,MeanSquaredError
 
 from .cifar10_models.densenet import densenet121, densenet161, densenet169
 from .cifar10_models.googlenet import googlenet
@@ -135,29 +135,6 @@ class CIFAR10LinearGroupModule(CIFAR10_Models):
         scheduler = self.setup_scheduler(optimizer,total_steps)
         return [optimizer], [scheduler]
 
-class CIFAR10RandDist(CIFAR10Module):
-    """Alternative module to use for random distillation. Trains based on the softmax output of another network. Reported accuracy is based on 
-
-    """
-    def __init__(self, hparams):
-        super().__init__(hparams)
-        print(hparams)
-        print(self.hparams)
-
-        # TODO train on the square loss, but eval classification accuracy.  
-        ## Here, forward outputs the pre-softmax outputs. keep these in order to fit better.  
-        self.criterion = torch.nn.MSELoss()
-        self.accuracy = Accuracy()
-
-        self.model = all_classifiers[self.hparams.classifier]()
-
-    def forward(self, batch):
-        images, labels = batch
-        predictions = self.model(images)
-        # TODO eval on the labels, not the softmaxes of labels. . 
-        loss = self.criterion(predictions, labels)
-        accuracy = self.accuracy(predictions, torch.argmax(labels,axis = 1))
-        return loss, accuracy * 100
 
 class CIFAR10Module(CIFAR10_Models):
     def __init__(self, hparams):
@@ -215,6 +192,50 @@ class CIFAR10Module(CIFAR10_Models):
         total_steps = self.hparams.max_epochs * len(self.train_dataloader())
         scheduler = self.setup_scheduler(optimizer,total_steps)
         return [optimizer], [scheduler]
+
+class CIFAR10RandDist(CIFAR10Module):
+    """Alternative module to use for random distillation. Trains based on the softmax output of another network. Reported accuracy is based on 
+
+    """
+    def __init__(self, hparams):
+        super().__init__(hparams)
+
+        # TODO train on the square loss, but eval classification accuracy.  
+        ## Here, forward outputs the pre-softmax outputs. keep these in order to fit better.  
+        self.traincriterion = torch.nn.MSELoss()
+        self.trainloss = MeanSquaredError()
+
+    def training_step(self, batch, batch_nb):
+        """Train with linear layer labels, not integer. 
+        """
+        images, labels = batch
+        import pdb; pdb.set_trace()
+        predictions = self.model(images)
+        # TODO eval on the labels, not the softmaxes of labels. . 
+        loss = self.traincriterion(predictions, labels)
+        accuracy = self.accuracy(predictions, torch.argmax(labels,axis = 1))*100
+
+        #loss, accuracy = self.forward(batch)
+        self.log("loss/train", loss)
+        self.log("acc/train", accuracy)
+        self.log("acc/train_mse", self.trainloss(predictions,labels))
+        return loss
+    def validation_step(self,batch,batch_nb):
+        loss, accuracy = self.forward(batch)
+        images, labels = batch
+        predictions = self.model(images)
+        self.log("loss/val", loss)
+        self.log("acc/val", accuracy)
+        self.log("acc/val_mse", self.trainloss(predictions,labels))
+
+    #def forward(self, batch):
+    #    images, labels = batch
+    #    predictions = self.model(images)
+    #    # TODO eval on the labels, not the softmaxes of labels. . 
+    #    loss = self.criterion(predictions, labels)
+    #    accuracy = self.accuracy(predictions, labels)
+    #    return loss, accuracy * 100
+
 
 class CIFAR10EnsembleModule(CIFAR10_Models):   
     """Customized module to train an ensemble of models independently. Requires that  
