@@ -219,9 +219,11 @@ class CIFAR10RandDist(CIFAR10Module):
         self.log("acc/train", accuracy)
         self.log("acc/train_mse", self.trainloss(predictions,labels))
         return loss
+
     def validation_step(self,batch,batch_nb):
-        loss, accuracy = self.forward(batch)
         images, labels = batch
+        loss = self.traincriterion(predictions, labels)
+        accuracy = self.accuracy(predictions, torch.argmax(labels,axis = 1))*100
         predictions = self.model(images)
         self.log("loss/val", loss)
         self.log("acc/val", accuracy)
