@@ -121,7 +121,16 @@ def main(args):
         logger = TensorBoardLogger("cifar10", name=args.classifier)
 
     ## Configure checkpoint and trainer: 
-    checkpoint = ModelCheckpoint(monitor="acc/val", mode="max", save_last=False, dirpath = os.path.join(script_dir,"../","models",args.classifier,args.module,datetime.datetime.now().strftime("%m-%d-%y"),datetime.datetime.now().strftime("%H_%M_%S")))
+    if args.module == "randdist": ## if random, save based on mse training error. 
+        monitor_quant = "acc/train_mse"
+        monitor_mode = "min"
+    elif args.module in modules.keys():    
+        monitor_quant = "acc/val"
+        monitor_mode = "max"
+    else:
+        raise ValueError("module {} not recognized".format(args.module))
+    
+    checkpoint = ModelCheckpoint(monitor=monitor_quant, mode=monitor_mode, save_last=True, dirpath = os.path.join(script_dir,"../","models",args.classifier,args.module,datetime.datetime.now().strftime("%m-%d-%y"),datetime.datetime.now().strftime("%H_%M_%S")))
 
     trainerargs = {
         #"default_root_dir":os.path.join(script_dir,"../","models",args.classifier,args.module),    
@@ -159,9 +168,11 @@ def main(args):
             model = modules[args.module].load_from_checkpoint(checkpoint_path=args.checkpoint,hparams = args)
         ## Really should be the case for anything
         else:    
-            model = modules[args.module].load_from_checkpoint(checkpoint_path=args.checkpoint,hparams = args)
+            model = modules[args.module](args)
+            checkpoint = torch.load(args.checkpoint)
+            model.load_state_dict(checkpoint["state_dict"])
     else: ## if training from scratch or loading from state dict:    
-        model = modules[args.module](**all_args)
+        model = modules[args.module](args)
         ## if loading from state dictionary instead of checkpoint: 
         if bool(args.pretrained):
             if args.pretrained_path is None:
@@ -184,9 +195,12 @@ def main(args):
         assert args.level, "for cifar10_c, level must be given"
         ood_data = CIFAR10_CData(args)
 
-    ## do we train the model or not? 
-    if bool(args.test_phase) or bool(args.random_eval):
+    ## do we train/save the model or not? 
+    if bool(args.test_phase):
         pass
+    elif bool(args.random_eval):
+        os.makedirs(trainer.checkpoint_callback.dirpath)
+        torch.save(model.state_dict(),os.path.join(trainer.checkpoint_callback.dirpath,"random_eval.pt"))
     else:
         trainer.fit(model, cifar10data)
 
