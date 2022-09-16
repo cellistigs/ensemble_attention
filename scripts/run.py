@@ -27,6 +27,37 @@ modules = {"base":CIFAR10Module,
 script_dir = os.path.abspath(os.path.dirname(__file__))
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+def traindata_eval(model,ind_data,device,softmax = True):   
+    """Custom evaluation function to output logits as arrays from models given the trained model on the training data. Used to generate training examples from random labels. 
+
+    :param model: a model from interpensembles.modules. Should have a method "calibration" that outputs predictions (logits) and labels given images and labels. 
+    :param ind_data: an instance of a data class (like CIFAR10Data,CIFAR10_1Data) that has a corresponding test_dataloader. 
+    :param device: device to run computations on.
+    :param softmax: whether or not to apply softmax to predictions. 
+    :returns: four arrays corresponding to predictions (array of shape (batch,classes)), and labels (shape (batch,)) for ind and ood data respectively. 
+
+    """
+    ## This is the only place where we need to worry about devices. The model should already know what device to use. 
+    all_preds= []
+    all_labels = []
+
+    ## model, cifart10data,cifart10_1data,
+    model.eval()
+    with torch.no_grad():
+        for idx,batch in tqdm(enumerate(ind_data.train_dataloader(shuffle=False,aug=False))):
+            ims = batch[0].to(device)
+            labels = batch[1].to(device)
+            pred,label = model.calibration((ims,labels))
+            ## to cpu
+            predarray = pred.cpu().numpy() ## 256x10
+            labelarray = label.cpu().numpy() ## 
+            all_preds.append(predarray)
+            all_labels.append(labelarray)
+
+    all_preds_array = np.concatenate(all_preds,axis = 0)
+    all_labels_array = np.concatenate(all_labels,axis = 0)
+    return all_preds_array,all_labels_array
+
 def custom_eval(model,ind_data,ood_data,device,softmax = True):   
     """Custom evaluation function to output logits as arrays from models given the trained model, in distribution data and out of distribution data. 
 
@@ -163,10 +194,13 @@ def main(args):
     data["out_dist_acc"] = trainer.test(model, ood_data.test_dataloader())[0]["acc/test"]
 
     preds_ind, labels_ind, preds_ood, labels_ood = custom_eval(model,cifar10data,ood_data,device,softmax = bool(args.softmax))
+    preds_train,labels_train = traindata_eval(model,cifar10data,device,softmax = bool(args.softmax))
 
     full_path = "." #os.path.join(results_dir,"robust_results{}_{}_{}".format(datetime.datetime.now().strftime("%m-%d-%y_%H:%M.%S"),args.module,args.classifier))
     np.save("ind_preds",preds_ind)
     np.save("ind_labels",labels_ind)
+    np.save("train_preds",preds_train)
+    np.save("train_labels",labels_train)
     if args.ood_dataset == "cifar10_1":
         np.save("ood_preds",preds_ood)
         np.save("ood_labels",labels_ood)
