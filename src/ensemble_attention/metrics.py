@@ -260,5 +260,70 @@ class Model_D_KL(object):
         kls = (1./M)*torch.sum(torch.sub(np.log(1./M),torch.log(normed_probs)),axis = 1) 
         return kls
 
+class Model_Ortega_Variance(object):
+    """Calculate diversity used as an upper bound on ensemble loss in https://proceedings.mlr.press/v151/ortega22a/ortega22a.pdf
+    This is the "tighter" upper bound that includes an additional hmax term. 
+
+    :param cost_format: output either "torch", or "numpy", indicating if we want to create a metric for training on torch tensors or experimenting with numpy arrays. 
+    """
+    def __init__(self,cost_format):
+        """
+
+        """
+        assert cost_format in ["torch","numpy"], "format must be either `torch` or `numpy`"
+        self.format = cost_format
+
+    def var(self,probs,labels):
+        if self.format == "numpy":
+            return self.var_numpy(probs,labels)
+        elif self.format == "torch":
+            return self.var_torch(probs,labels)
+
+    def var_numpy(self,logprobs,labels):
+        """Follows implementation from https://github.com/PGM-Lab/2022-AISTATS-diversity/blob/63df2e5f29cdaefe49626439bbe13289f37eed36/baselines/utils/varianceBound.py#L75
+        :param logprobs: an iterable of probabilities, each of which has identical shape (batch, class)
+        :param labels: a set of labels of shape (batch,)
+        """
+        M = len(logprobs)
+        log_prob_array = np.stack(logprobs,axis = 0)
+        correct_log_probs = log_prob_array[:,np.arange(log_prob_array.shape[1]),labels] # (models,batch)
+
+        ## get scaling factor for tighter bound:
+        logmean = np.log(np.sum(np.exp(correct_log_probs),axis = 0))-np.log(M)
+        logmax = np.max(correct_log_probs,axis = 0)
+        inc = logmean-logmax
+        hmax1 = (inc/np.power(1-np.exp(inc),2))/(np.exp(logmax)**2)
+        hmax2 = (np.power(np.exp(inc)*(1-np.exp(inc)),-1))/(np.exp(logmax)**2)
+        hmax = hmax1 + hmax2
+
+        variance = np.mean(np.exp(2*correct_log_probs-2*logmax),axis = 0)
+        for j in range(M):
+            variance -= np.mean(np.exp(correct_log_probs+correct_log_probs[j,:]-2*logmax),axis =0) / M
+        full_variance =  hmax*variance    
+        return full_variance
+
+
+    def var_torch(self,logprobs,labels):
+        """
+        :param logprobs: an iterable of probabilities, each of which has identical shape (batch, class)
+        :param labels: a set of labels of shape (batch,)
+        """
+        M = len(logprobs)
+        log_prob_array = torch.stack(logprobs,axis = 0)
+        correct_log_probs = log_prob_array[:,np.arange(log_prob_array.shape[1]),labels] # (models,batch)
+
+        logmean = torch.log(torch.sum(torch.exp(correct_log_probs),axis=0))-np.log(M)
+        logmax = torch.max(correct_log_probs,0)[0]
+        inc = logmean-logmax
+        hmax1 = (inc/torch.pow(1-torch.exp(inc),2))/(torch.exp(logmax)**2)
+        hmax2 = (torch.pow(torch.exp(inc)*(1-torch.exp(inc)),-1))/(torch.exp(logmax)**2)
+        hmax = hmax1+hmax2
+
+        variance = torch.mean(torch.exp(2*correct_log_probs-2*logmax),axis = 0)
+        for j in range(M):
+            variance -= torch.mean(torch.exp(correct_log_probs+correct_log_probs[j,:]-2*logmax),axis = 0)/M
+        full_variance = hmax*variance
+        return full_variance
+
 
 
