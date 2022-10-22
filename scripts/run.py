@@ -10,8 +10,7 @@ import numpy as np
 from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger, TensorBoardLogger
-
-from ensemble_attention.module import CIFAR10Module,CIFAR10EnsembleModule,CIFAR10AttentionEnsembleModule,CIFAR10AttentionEnsembleSkipModule,CIFAR10AttentionEnsembleMLPSkipModule,CIFAR10EnsembleDKLModule
+from ensemble_attention.module import CIFAR10Module,CIFAR10EnsembleModule,CIFAR10AttentionEnsembleModule,CIFAR10AttentionEnsembleSkipModule,CIFAR10AttentionEnsembleMLPSkipModule,CIFAR10EnsembleDKLModule,CIFAR10EnsemblePAC2BModule
 from ensemble_attention.callback import Check_GradNorm
 
 from cifar10_ood.data import CIFAR10Data,CIFAR10_1Data,CINIC10_Data,CIFAR10_CData
@@ -20,6 +19,7 @@ from cifar10_ood.data import CIFAR10Data,CIFAR10_1Data,CINIC10_Data,CIFAR10_CDat
 modules = {"base":CIFAR10Module,
         "ensemble":CIFAR10EnsembleModule,
         "ensemble_dkl":CIFAR10EnsembleDKLModule,
+        "ensemble_p2b":CIFAR10EnsemblePAC2BModule,
         "attention":CIFAR10AttentionEnsembleModule,
         "attentionskip":CIFAR10AttentionEnsembleSkipModule,
         "attentionmlpskip":CIFAR10AttentionEnsembleMLPSkipModule,

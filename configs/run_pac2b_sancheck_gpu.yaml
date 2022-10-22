@@ -1,14 +1,12 @@
 # Program arguments: 
-data_dir: /home/ubuntu/cifar10_ood/data/ 
+data_dir: /Users/taigaabe/Code/cifar10_ood/data/ 
 ood_dataset: cifar10_1  
-callbacks: 0 ## whether to use callbacks to debug. 
 version: v4 
 level: null  
 corruption: null
 deterministic: 0
 seed: null  
 test_phase: 0   
-random_eval: 0
 dev: 0  
 logger: "tensorboard"  
 checkpoint: null  
@@ -18,7 +16,8 @@ module: ensemble_p2b
 
 # Trainer arguments 
 classifier: resnet18  
-gamma: 1 ## weight of dkl argument. 
+random_eval: 0
+gamma: 0 ## weight of dkl argument. 
 embedding_dim: 25 ## attention embedding
 start_attention: 10 ## epoch on which to start attentio
 pretrained: 0 ## if we use pretrained models or not. 
