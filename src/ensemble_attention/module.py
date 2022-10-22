@@ -385,7 +385,7 @@ class CIFAR10EnsembleDKLModule(CIFAR10EnsembleModule):
                 }
         return scheduler    
 
-class CIFAR10EnsemblePAC2BModule():
+class CIFAR10EnsemblePAC2BModule(CIFAR10EnsembleModule):
     """Customized module to train with PAC2B loss from ortega et al. 
 
     """
