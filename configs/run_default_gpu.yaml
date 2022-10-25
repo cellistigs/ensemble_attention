@@ -1,5 +1,5 @@
 # Program arguments: 
-data_dir: /home/ubuntu/cifar10_ood/data/ 
+data_dir: /Users/taigaabe/Code/cifar10_ood/data/ 
 ood_dataset: cifar10_1  
 version: v4 
 level: null  
@@ -16,6 +16,7 @@ module: ensemble_p2b
 
 # Trainer arguments 
 classifier: resnet18  
+random_eval: 0
 gamma: 1 ## weight of dkl argument. 
 embedding_dim: 25 ## attention embedding
 start_attention: 10 ## epoch on which to start attentio
