@@ -1,12 +1,14 @@
 # Program arguments: 
 data_dir: /Users/taigaabe/Code/cifar10_ood/data/ 
 ood_dataset: cifar10_1  
+callbacks: 0 ## whether to use callbacks to debug. 
 version: v4 
 level: null  
 corruption: null
 deterministic: 0
 seed: null  
 test_phase: 0   
+random_eval: 0
 dev: 0  
 logger: "tensorboard"  
 checkpoint: null  

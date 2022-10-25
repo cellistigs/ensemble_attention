@@ -10,8 +10,8 @@ import numpy as np
 from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger, TensorBoardLogger
-
 from ensemble_attention.module import CIFAR10Module,CIFAR10EnsembleModule,CIFAR10AttentionEnsembleModule,CIFAR10AttentionEnsembleSkipModule,CIFAR10AttentionEnsembleMLPSkipModule,CIFAR10EnsembleDKLModule,CIFAR10EnsemblePAC2BModule
+from ensemble_attention.callback import Check_GradNorm
 
 from cifar10_ood.data import CIFAR10Data,CIFAR10_1Data,CINIC10_Data,CIFAR10_CData
 
@@ -137,7 +137,10 @@ def main(args):
         print("training on GPU")
         trainerargs["gpus"] = -1  
 
-    trainer = Trainer(**trainerargs)
+    if args.callbacks:
+        trainer = Trainer(**trainerargs,callbacks = [Check_GradNorm()])
+    else:
+        trainer = Trainer(**trainerargs)
 
     ## define arguments for each model class: 
     all_args = {"hparams":args} 
