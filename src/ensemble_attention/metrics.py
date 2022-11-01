@@ -325,5 +325,149 @@ class Model_Ortega_Variance(object):
         full_variance = hmax*variance
         return full_variance
 
+class Model_JS_Unif(object):
+    """Calculate diversity using the multi-distribution Jensen-Shannon divergence between all ensemble members. Among other sources, this is the diversity measure used in Diversity and Co-training. 
+    
+    """
+    def __init__(self,cost_format):
+        """
 
+        """
+        assert cost_format in ["torch","numpy"], "format must be either `torch` or `numpy`"
+        self.format = cost_format
 
+    def js_unif(probs):    
+        """probs should be an iterable of probabilities, each of which has identical shape (batch,classes)
+
+        """
+        if self.format == "numpy":
+            return self.js_unif_numpy(probs)
+        elif self.format == "torch":
+            return self.js_unif_torch(probs)
+
+    def js_unif_numpy(self,probs):
+        probs_array =np.stack(probs,axis = 0)
+        avg_probs = np.mean(probs_array,axis = 0)
+
+        logprobs = np.log(probs_array) # shape (models,batch,classes)
+        avg_logprobs = np.log(avg_probs) # shape (batch,classes)
+
+        shannon_inf = -probs_array*logprobs
+        avg_shannon_inf = -avg_probs*avg_logprobs
+
+        entropy = np.sum(shannon_inf,axis = -1)
+        avg_entropy = np.sum(avg_shannon_inf,axis = -1)
+
+        jsd = avg_entropy - np.mean(entropy,axis = 0)
+
+        return jsd
+
+    def js_unif_torch(self,probs):
+        """
+        """
+        probs_array = torch.stack(probs,axis = 0)
+        avg_probs = torch.mean(probs_array,axis = 0)
+
+        logprobs = torch.log(probs_array)
+        avg_logprobs = torch.log(avg_probs)
+
+        shannon_inf = -probs_array*logprobs
+        avg_shannon_inf = -avg_probs*avg_logprobs
+
+        entropy = torch.sum(shannon_inf,axis = -1)
+        avg_entropy = torch.sum(avg_shannon_inf,axis = -1)
+
+        jsd = avg_entropy - torch.mean(entropy,axis = 0)
+
+        return jsd
+
+class Model_JS_Avg(object):
+    """Calculates diversity using the Jensen-Shannon-divergence between an ensemble member and the ensemble prediction. Among other sources, this is the diversity measure used in Jensen-Shannon Divergence in Ensembles of Concurrently-Trained Neural Networks. 
+
+    """
+    def __init__(self,cost_format):
+        """
+
+        """
+        assert cost_format in ["torch","numpy"], "format must be either `torch` or `numpy`"
+        self.format = cost_format
+
+    def js_avg(probs):    
+        if self.format == "numpy":
+            return self.js_avg_numpy(probs)
+        elif self.format == "torch":
+            return self.js_avg_torch(probs)
+
+    def js_avg_numpy(self,probs):    
+        probs_array =np.stack(probs,axis = 0)
+        avg_probs = np.mean(probs_array,axis = 0)
+
+        logprobs = np.log(probs_array) # shape (models,batch,classes)
+        avg_logprobs = np.log(avg_probs) # shape (batch,classes)
+
+        combined_probs = 0.5*probs_array+0.5*avg_probs ## broadcast average probabilities on first dim. 
+        log_combined_probs = np.log(combined_probs)
+
+        avg_kl_terms = np.sum(avg_probs*(avg_logprobs-log_combined_probs),axis = -1)
+        single_kl_terms = np.sum(probs_array*(logprobs-log_combined_probs),axis = -1)
+        single_model_jsds = 0.5*(avg_kl_terms+single_kl_terms) ## shape (models,batch)
+
+        avg_jsd = np.mean(single_model_jsds,axis = 0)
+        return avg_jsd
+    
+    def js_avg_torch(self,probs):
+        probs_array = torch.stack(probs,axis = 0)
+        avg_probs = torch.mean(probs_array,axis = 0)
+
+        logprobs = torch.log(probs_array)
+        avg_logprobs = torch.log(avg_probs)
+
+        combined_probs = 0.5*probs_array+0.5*avg_probs ## broadcast average probabilities on first dim. 
+        log_combined_probs = torch.log(combined_probs)
+
+        avg_kl_terms = torch.sum(avg_probs*(avg_logprobs-log_combined_probs),axis = -1)
+        single_kl_terms = torch.sum(probs_array*(logprobs-log_combined_probs),axis = -1)
+        single_model_jsds = 0.5*(avg_kl_terms+single_kl_terms) ## shape (models,batch)
+
+        avg_jsd = torch.mean(single_model_jsds,axis = 0)
+        return avg_jsd
+
+class Model_DKL_Avg(object):    
+    """Calculates diversity using the KL divergence from the ensemble prediction to a single model prediction (ensemble as first argument). 
+
+    """
+    def __init__(self,cost_format):
+        """
+
+        """
+        assert cost_format in ["torch","numpy"], "format must be either `torch` or `numpy`"
+        self.format = cost_format
+
+    def dkl_avg(probs):    
+        if self.format == "numpy":
+            return self.dkl_avg_numpy(probs)
+        elif self.format == "torch":
+            return self.dkl_avg_torch(probs)
+    
+    def dkl_avg_numpy(self,probs):
+        probs_array =np.stack(probs,axis = 0)
+        avg_probs = np.mean(probs_array,axis = 0)
+
+        logprobs = np.log(probs_array) # shape (models,batch,classes)
+        avg_logprobs = np.log(avg_probs) # shape (batch,classes)
+
+        single_model_kl = np.sum(avg_probs*(avg_logprobs-logprobs),axis = -1) ## shape (models,batch)
+        avg_kl = np.mean(single_model_kl,axis = 0)
+        return avg_kl
+
+    def dkl_avg_torch(self,probs):
+        probs_array = torch.stack(probs,axis = 0)
+        avg_probs = torch.mean(probs_array,axis = 0)
+
+        logprobs = torch.log(probs_array)
+        avg_logprobs = torch.log(avg_probs)
+
+        single_model_kl = torch.sum(avg_probs*(avg_logprobs-logprobs),axis = -1) ## shape (models,batch)
+        avg_kl = torch.mean(single_model_kl,axis = 0)
+        
+        return avg_kl
