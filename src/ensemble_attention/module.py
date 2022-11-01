@@ -430,6 +430,140 @@ class CIFAR10EnsemblePAC2BModule(CIFAR10EnsembleModule):
         self.log("lr/lr",lr)
         return loss
 
+class CIFAR10EnsembleJS_Unif_Module(CIFAR10EnsembleModule):
+    """Customized module to train with  
+
+    """
+    def __init__(self,hparams):
+        super().__init__(hparams)
+        self.traincriterion = torch.nn.NLLLoss()
+        self.js = Model_JS_Unif("torch")
+        self.gamma = hparams.gamma
+
+    def training_step(self, batch, batch_nb):
+        """When we train, we want to train independently. 
+        """
+        softmax = torch.nn.Softmax(dim = 1)
+        
+        images, labels = batch
+        losses = []
+        accs = []
+        softmaxes = []
+        for m in self.models:
+            predictions = m(images) ## this just a bunch of unnormalized scores? 
+            normed = softmax(predictions)
+            softmaxes.append(normed)
+            mloss = self.criterion(predictions, labels)
+            accuracy = self.accuracy(predictions,labels)
+            losses.append(mloss)
+            accs.append(accuracy) 
+        ## standard loss: 
+        llloss = sum(losses)/self.nb_models ## calculate the sum with pure python functions.    
+        avg_accuracy = sum(accs)/self.nb_models
+
+        ## diversity term:
+        divloss = torch.mean(self.js.js_unif([s for s in softmaxes]))
+
+        loss = (llloss - self.gamma*divloss) ## with gama = 0, this is equal to normal training. 
+
+        self.log("loss/train_ll", llloss)
+        self.log("reg/var",divloss)
+        self.log("loss/train", loss)
+        self.log("acc/train", avg_accuracy*100)
+
+        lr = self.trainer.lr_schedulers[0]["scheduler"].get_last_lr()[-1]
+        self.log("lr/lr",lr)
+        return loss
+
+class CIFAR10EnsembleJS_Avg_Module(CIFAR10EnsembleModule):
+    """Customized module to train with  
+
+    """
+    def __init__(self,hparams):
+        super().__init__(hparams)
+        self.traincriterion = torch.nn.NLLLoss()
+        self.js = Model_JS_Avg("torch")
+        self.gamma = hparams.gamma
+
+    def training_step(self, batch, batch_nb):
+        """When we train, we want to train independently. 
+        """
+        softmax = torch.nn.Softmax(dim = 1)
+        
+        images, labels = batch
+        losses = []
+        accs = []
+        softmaxes = []
+        for m in self.models:
+            predictions = m(images) ## this just a bunch of unnormalized scores? 
+            normed = softmax(predictions)
+            softmaxes.append(normed)
+            mloss = self.criterion(predictions, labels)
+            accuracy = self.accuracy(predictions,labels)
+            losses.append(mloss)
+            accs.append(accuracy) 
+        ## standard loss: 
+        llloss = sum(losses)/self.nb_models ## calculate the sum with pure python functions.    
+        avg_accuracy = sum(accs)/self.nb_models
+
+        ## diversity term:
+        divloss = torch.mean(self.js.js_avg([s for s in softmaxes]))
+
+        loss = (llloss - self.gamma*divloss) ## with gama = 0, this is equal to normal training 
+
+        self.log("loss/train_ll", llloss)
+        self.log("reg/var",divloss)
+        self.log("loss/train", loss)
+        self.log("acc/train", avg_accuracy*100)
+
+        lr = self.trainer.lr_schedulers[0]["scheduler"].get_last_lr()[-1]
+        self.log("lr/lr",lr)
+        return loss
+
+class CIFAR10EnsembleDKL_Avg_Module(CIFAR10EnsembleModule):
+    """Customized module to train with  
+
+    """
+    def __init__(self,hparams):
+        super().__init__(hparams)
+        self.traincriterion = torch.nn.NLLLoss()
+        self.dkl = Model_DKL_Avg("torch")
+        self.gamma = hparams.gamma
+
+    def training_step(self, batch, batch_nb):
+        """When we train, we want to train independently. 
+        """
+        softmax = torch.nn.Softmax(dim = 1)
+        
+        images, labels = batch
+        losses = []
+        accs = []
+        softmaxes = []
+        for m in self.models:
+            predictions = m(images) ## this just a bunch of unnormalized scores? 
+            normed = softmax(predictions)
+            softmaxes.append(normed)
+            mloss = self.criterion(predictions, labels)
+            accuracy = self.accuracy(predictions,labels)
+            losses.append(mloss)
+            accs.append(accuracy) 
+        ## standard loss: 
+        llloss = sum(losses)/self.nb_models ## calculate the sum with pure python functions.    
+        avg_accuracy = sum(accs)/self.nb_models
+
+        ## diversity term:
+        divoss = torch.mean(self.dkl.dkl_avg([s for s in softmaxes]))
+
+        loss = (llloss - self.gamma*divloss) ## with gama = 1, this is equal to the PAC2B loss. 
+
+        self.log("loss/train_ll", llloss)
+        self.log("reg/var",divloss)
+        self.log("loss/train", loss)
+        self.log("acc/train", avg_accuracy*100)
+
+        lr = self.trainer.lr_schedulers[0]["scheduler"].get_last_lr()[-1]
+        self.log("lr/lr",lr)
+        return loss
 
 class CIFAR10AttentionEnsembleModule(CIFAR10_Models):
     """Customized module to train with attention. Initialized the same way as standard ensembles.  
