@@ -1,5 +1,5 @@
 ## test dkl metric 
-from ensemble_attention.metrics import Model_D_KL,Model_Ortega_Variance
+from ensemble_attention.metrics import Model_D_KL,Model_Ortega_Variance,Model_JS_Unif,Model_JS_Avg,Model_DKL_Avg
 import numpy as np
 import torch
 from scipy.special import softmax
@@ -86,4 +86,66 @@ class Test_Model_Ortega_Variance():
         assert np.allclose(out_torch.numpy(),out_numpy)
         assert np.all(out_torch.numpy()>0)
 
+class Test_Model_JS_Unif():       
+    M = 5
+    np_data = [random_preds(100,10) for i in range(5)]
+    np_labels = np.random.randint(0,10,100)
+    torch_data = [torch.tensor(nd) for nd in np_data]
+    torch_labels = torch.tensor(np_labels)
+    def test_vals(self):
+        js = Model_JS_Unif("numpy")
+        ## setup 
+        same =  self.np_data#[self.np_data[0] for i in range(self.M)]
+        out_numpy = js.js_unif_numpy(same)
+        assert np.all(out_numpy>0)
+        out_torch = js.js_unif_torch(self.torch_data)
+        assert np.all(out_torch.numpy()>0)
+        assert np.allclose(out_torch.numpy()-out_numpy,0)
+
+        same =  [self.np_data[0] for i in range(self.M)]
+        out_numpy = js.js_unif_numpy(same)
+        assert np.allclose(out_numpy,0)
+
+
+class Test_Model_JS_Avg():       
+    M = 5
+    np_data = [random_preds(100,10) for i in range(5)]
+    np_labels = np.random.randint(0,10,100)
+    torch_data = [torch.tensor(nd) for nd in np_data]
+    torch_labels = torch.tensor(np_labels)
+    def test_vals(self):
+        js = Model_JS_Avg("numpy")
+        ## setup 
+        same =  self.np_data#[self.np_data[0] for i in range(self.M)]
+        out_numpy = js.js_avg_numpy(same)
+        assert np.all(out_numpy>0)
+
+        out_torch = js.js_avg_torch(self.torch_data)
+        assert np.all(out_torch.numpy()>0)
+        assert np.allclose(out_torch.numpy()-out_numpy,0)
+
+        same =  [self.np_data[0] for i in range(self.M)]
+        out_numpy = js.js_avg_numpy(same)
+        assert np.allclose(out_numpy,0)
+
+class Test_Model_DKL_Avg():       
+    M = 5
+    np_data = [random_preds(100,10) for i in range(5)]
+    np_labels = np.random.randint(0,10,100)
+    torch_data = [torch.tensor(nd) for nd in np_data]
+    torch_labels = torch.tensor(np_labels)
+    def test_vals(self):
+        dkl= Model_DKL_Avg("numpy")
+        ## setup 
+        same =  self.np_data#[self.np_data[0] for i in range(self.M)]
+        out_numpy = dkl.dkl_avg_numpy(same)
+        assert np.all(out_numpy>0)
+
+        out_torch = dkl.dkl_avg_torch(self.torch_data)
+        assert np.all(out_torch.numpy()>0)
+        assert np.allclose(out_torch.numpy()-out_numpy,0)
+
+        same =  [self.np_data[0] for i in range(self.M)]
+        out_numpy = dkl.dkl_avg_numpy(same)
+        assert np.allclose(out_numpy,0)
 
