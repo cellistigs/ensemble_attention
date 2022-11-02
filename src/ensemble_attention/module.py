@@ -11,7 +11,7 @@ from .cifar10_models.wideresnet_28 import wideresnet28_10
 from .cifar10_models.vgg import vgg11_bn, vgg13_bn, vgg16_bn, vgg19_bn
 from .schduler import WarmupCosineLR
 from .layers import AttnComparison,PosEncodings,PosEncodingsSq,PosEncodingsSin
-from .metrics import Model_D_KL,Model_Ortega_Variance
+from .metrics import Model_D_KL,Model_Ortega_Variance,Model_JS_Unif,Model_JS_Avg,Model_DKL_Avg
 
 all_classifiers = {
     "vgg11_bn": vgg11_bn,
@@ -387,6 +387,7 @@ class CIFAR10EnsembleDKLModule(CIFAR10EnsembleModule):
 
 class CIFAR10EnsemblePAC2BModule(CIFAR10EnsembleModule):
     """Customized module to train with PAC2B loss from ortega et al. 
+    NOTE: Unlike all other losses below and above, here we SUBTRACT diversity, so gammas will flip sign.  
 
     """
     def __init__(self,hparams):
@@ -464,7 +465,7 @@ class CIFAR10EnsembleJS_Unif_Module(CIFAR10EnsembleModule):
         ## diversity term:
         divloss = torch.mean(self.js.js_unif([s for s in softmaxes]))
 
-        loss = (llloss - self.gamma*divloss) ## with gama = 0, this is equal to normal training. 
+        loss = (llloss + self.gamma*divloss) ## with gama = 0, this is equal to normal training. 
 
         self.log("loss/train_ll", llloss)
         self.log("reg/var",divloss)
@@ -509,7 +510,7 @@ class CIFAR10EnsembleJS_Avg_Module(CIFAR10EnsembleModule):
         ## diversity term:
         divloss = torch.mean(self.js.js_avg([s for s in softmaxes]))
 
-        loss = (llloss - self.gamma*divloss) ## with gama = 0, this is equal to normal training 
+        loss = (llloss + self.gamma*divloss) ## with gama = 0, this is equal to normal training 
 
         self.log("loss/train_ll", llloss)
         self.log("reg/var",divloss)
@@ -554,7 +555,7 @@ class CIFAR10EnsembleDKL_Avg_Module(CIFAR10EnsembleModule):
         ## diversity term:
         divoss = torch.mean(self.dkl.dkl_avg([s for s in softmaxes]))
 
-        loss = (llloss - self.gamma*divloss) ## with gama = 1, this is equal to the PAC2B loss. 
+        loss = (llloss + self.gamma*divloss) ## with gama = 1, this is equal to the PAC2B loss. 
 
         self.log("loss/train_ll", llloss)
         self.log("reg/var",divloss)
