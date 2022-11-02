@@ -292,6 +292,7 @@ class Model_Ortega_Variance(object):
         logmean = np.log(np.sum(np.exp(correct_log_probs),axis = 0))-np.log(M)
         logmax = np.max(correct_log_probs,axis = 0)
         inc = logmean-logmax
+        inc = np.clip(inc,-10,-0.01)
         hmax1 = (inc/np.power(1-np.exp(inc),2))/(np.exp(logmax)**2)
         hmax2 = (np.power(np.exp(inc)*(1-np.exp(inc)),-1))/(np.exp(logmax)**2)
         hmax = hmax1 + hmax2
@@ -315,6 +316,7 @@ class Model_Ortega_Variance(object):
         logmean = torch.log(torch.sum(torch.exp(correct_log_probs),axis=0))-np.log(M)
         logmax = torch.max(correct_log_probs,0)[0]
         inc = logmean-logmax
+        inc = torch.clip(inc,-10.-0.01)
         hmax1 = (inc/torch.pow(1-torch.exp(inc),2))/(torch.exp(logmax)**2)
         hmax2 = (torch.pow(torch.exp(inc)*(1-torch.exp(inc)),-1))/(torch.exp(logmax)**2)
         hmax = hmax1+hmax2
@@ -322,7 +324,8 @@ class Model_Ortega_Variance(object):
         variance = torch.mean(torch.exp(2*correct_log_probs-2*logmax),axis = 0)
         for j in range(M):
             variance -= torch.mean(torch.exp(correct_log_probs+correct_log_probs[j,:]-2*logmax),axis = 0)/M
-        full_variance = hmax*variance
+        #full_variance = hmax*variance
+        full_variance = variance
         return full_variance
 
 
