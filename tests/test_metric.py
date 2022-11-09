@@ -72,7 +72,7 @@ class Test_Model_Ortega_Variance():
             var_cross_term = np.mean(same_array*same_array[j,:]/(max_probs**2),axis = 0)/self.M
             var -= var_cross_term
 
-        full_var = var*hmax
+        full_var = var#*hmax
         assert np.allclose(full_var,out_numpy)
         assert np.all(full_var>0)
         assert np.all(out_numpy>0)
