@@ -300,7 +300,7 @@ class Model_Ortega_Variance(object):
         variance = np.mean(np.exp(2*correct_log_probs-2*logmax),axis = 0)
         for j in range(M):
             variance -= np.mean(np.exp(correct_log_probs+correct_log_probs[j,:]-2*logmax),axis =0) / M
-        full_variance =  hmax*variance    
+        full_variance =  variance    
         return full_variance
 
 
@@ -403,10 +403,14 @@ class Model_JS_Avg(object):
 
     def js_avg_numpy(self,probs):    
         probs_array =np.stack(probs,axis = 0)
-        avg_probs = np.mean(probs_array,axis = 0)
+        #avg_probs = np.mean(probs_array,axis = 0)
+        masked_arrays = [np.ma.array(probs_array,mask = False) for i in range(len(probs))]
+        for i,m in enumerate(masked_arrays):
+            m.mask[i,:,:] = True 
+        avg_probs = np.stack([m.mean(axis = 0) for m in masked_arrays],axis = 0) # shape (batch,classes)
 
         logprobs = np.log(probs_array) # shape (models,batch,classes)
-        avg_logprobs = np.log(avg_probs) # shape (batch,classes)
+        avg_logprobs = np.log(avg_probs) # shape (avg_probs,batch,classes)
 
         combined_probs = 0.5*probs_array+0.5*avg_probs ## broadcast average probabilities on first dim. 
         log_combined_probs = np.log(combined_probs)
@@ -420,7 +424,13 @@ class Model_JS_Avg(object):
     
     def js_avg_torch(self,probs):
         probs_array = torch.stack(probs,axis = 0)
-        avg_probs = torch.mean(probs_array,axis = 0)
+        inds = []
+        for j in range(len(probs)):
+            inds.append([i for i in range(len(probs)) if i is not j])
+        sub_arrays = [probs_array[ind] for ind in inds]
+        avg_probs = torch.stack([torch.mean(si,axis = 0) for si in sub_arrays],axis = 0)
+        #avg_probs = torch.mean(probs_array,axis = 0)
+
 
         logprobs = torch.log(probs_array)
         avg_logprobs = torch.log(avg_probs)
