@@ -12,6 +12,7 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger, TensorBoardLogger
 from ensemble_attention.module import CIFAR10Module,CIFAR10EnsembleModule,CIFAR10AttentionEnsembleModule,CIFAR10AttentionEnsembleSkipModule,CIFAR10AttentionEnsembleMLPSkipModule,CIFAR10EnsembleDKLModule,CIFAR10EnsemblePAC2BModule,CIFAR10EnsembleJS_Unif_Module,CIFAR10EnsembleJS_Avg_Module,CIFAR10EnsembleDKL_Avg_Module
 # from ensemble_attention.callback import Check_GradNorm
+from pytorch_lightning.plugins import ddp_plugin
 
 from cifar10_ood.data import CIFAR10Data,CIFAR10_1Data,CINIC10_Data,CIFAR10_CData
 
@@ -138,6 +139,9 @@ def main(args):
         }
     if args.get('accelerator', False):
         trainerargs['accelerator'] = args.accelerator
+
+        if args.accelerator == "ddp":
+            args.plugins = [ddp_plugin.DDPPlugin(find_unused_parameters=False)]
 
     if torch.cuda.is_available():
         print("training on GPU")
