@@ -9,15 +9,15 @@ parameters:
   data_dir:
     value: /home/ekellbuch/pytorch_datasets/cifar10_ood/data
   gamma:
-    values: [0.01]
+    values: [0.01, 0.1, 1, 4]
   max_epochs:
-    value: 2
+    value: 100
   logger:
     value: 'wandb'
   num_workers:
     value: 8
   accelerator:
-    value: 'dp'
+    value: 'ddp'
 
 
 command:

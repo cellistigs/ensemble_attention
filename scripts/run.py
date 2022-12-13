@@ -113,8 +113,8 @@ def main(args):
     ## Set seeds if given.  
     if args.seed is not None:
         seed_everything(args.seed)
-    if torch.cuda.is_available():
-        os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu_id
+#    if torch.cuda.is_available():
+#        os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu_id
 
     ## Set up logging. 
     if args.logger == "wandb":
