@@ -1,0 +1,27 @@
+name: gamma_ensemble_resnet_18
+program: ../../scripts/run.py
+method: grid
+
+metric:
+  name: loss/val
+  goal: minimize
+parameters:
+  data_dir:
+    value: /home/ekellbuch/pytorch_datasets/cifar10_ood/data
+  gamma:
+    values: [0.01, 0.1, 1.0, 1.5, 2.0, 3.0]
+  max_epochs:
+    value: 100
+  logger:
+    value: 'wandb'
+  num_workers:
+    value: 8
+
+
+command:
+  - ${env}
+  - python
+  - ${program}
+  - "--config-name"
+  - "run_default_gpu"
+  - ${args_no_hyphens}
