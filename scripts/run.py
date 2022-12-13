@@ -141,7 +141,7 @@ def main(args):
         trainerargs['accelerator'] = args.accelerator
 
         if args.accelerator == "ddp":
-            args.plugins = [ddp_plugin.DDPPlugin(find_unused_parameters=False)]
+            trainerargs['plugins'] = [ddp_plugin.DDPPlugin(find_unused_parameters=False)]
 
     if torch.cuda.is_available():
         print("training on GPU")
