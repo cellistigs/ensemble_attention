@@ -136,8 +136,8 @@ def main(args):
         "checkpoint_callback":checkpoint,
         "precision":args.precision,
         }
-    if args.get('strategy', False):
-        trainerargs['strategy'] = args.strategy
+    if args.get('accelerator', False):
+        trainerargs['accelerator'] = args.accelerator
 
     if torch.cuda.is_available():
         print("training on GPU")

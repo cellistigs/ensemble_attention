@@ -16,7 +16,7 @@ parameters:
     value: 'wandb'
   num_workers:
     value: 8
-  strategy:
+  accelerator:
     value: 'dp'
 
 

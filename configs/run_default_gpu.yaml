@@ -30,7 +30,7 @@ test_set: "CIFAR10"
 scheduler: cosine
 
 # gpu stratefy
-strategy: "dp"
+accelerator: "dp"
 num_workers: 8
 gpu_id: "0"
 
