@@ -10,20 +10,19 @@ import numpy as np
 from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger, TensorBoardLogger
-from ensemble_attention.module import
-CIFAR10Module,CIFAR10EnsembleModule,CIFAR10AttentionEnsembleModule,CIFAR10AttentionEnsembleSkipModule,CIFAR10AttentionEnsembleMLPSkipModule,CIFAR10EnsembleDKLModule,CIFAR10EnsemblePAC2BModule,CIFAR10EnsembleJS_Unif_Module,CIFAR10EnsembleJS_Avg_Module,CIFAR10EnsembleDKL_Avg_Module
-from ensemble_attention.callback import Check_GradNorm
+from ensemble_attention.module import CIFAR10Module,CIFAR10EnsembleModule,CIFAR10AttentionEnsembleModule,CIFAR10AttentionEnsembleSkipModule,CIFAR10AttentionEnsembleMLPSkipModule,CIFAR10EnsembleDKLModule,CIFAR10EnsemblePAC2BModule,CIFAR10EnsembleJS_Unif_Module,CIFAR10EnsembleJS_Avg_Module,CIFAR10EnsembleDKL_Avg_Module
+# from ensemble_attention.callback import Check_GradNorm
 
 from cifar10_ood.data import CIFAR10Data,CIFAR10_1Data,CINIC10_Data,CIFAR10_CData
 
 
 modules = {"base":CIFAR10Module,
-        "ensemble":CIFAR10EnsembleModule,
-        "ensemble_dkl":CIFAR10EnsembleDKLModule,
-        "ensemble_p2b":CIFAR10EnsemblePAC2BModule,
-        "ensemble_js_unif":CIFAR10EnsembleJS_Unif_Module,
-        "ensemble_js_avg":CIFAR10EnsembleJS_Avg_Module,
-        "ensemble_dkl_avg":CIFAR10EnsembleDKL_Avg_Module,
+        "ensemble":CIFAR10EnsembleModule,  # train time ensemble
+        "ensemble_dkl":CIFAR10EnsembleDKLModule,  #jgap ensemble
+        "ensemble_p2b":CIFAR10EnsemblePAC2BModule,  # Ortega ensemble
+        "ensemble_js_unif":CIFAR10EnsembleJS_Unif_Module,  # co-training ensemble
+        "ensemble_js_avg":CIFAR10EnsembleJS_Avg_Module,  # Mishtal ensemble
+        "ensemble_dkl_avg":CIFAR10EnsembleDKL_Avg_Module,  # Webb ensembling
         "attention":CIFAR10AttentionEnsembleModule,
         "attentionskip":CIFAR10AttentionEnsembleSkipModule,
         "attentionmlpskip":CIFAR10AttentionEnsembleMLPSkipModule,
