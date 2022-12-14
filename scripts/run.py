@@ -137,15 +137,19 @@ def main(args):
         "checkpoint_callback":checkpoint,
         "precision":args.precision,
         }
+
+    if torch.cuda.is_available():
+        print("training on GPU(s) ".format(args.get('gpus', -1)))
+        trainerargs["gpus"] = args.get('gpus', -1)
+
     if args.get('accelerator', False):
         trainerargs['accelerator'] = args.accelerator
 
         if args.accelerator == "ddp":
+            # do we need this for args?
+            args.batch_size = int(args.batch_size / max(1, args.gpus))
+            args.num_workers = int(args.num_workers / max(1, args.gpus))
             trainerargs['plugins'] = [ddp_plugin.DDPPlugin(find_unused_parameters=False)]
-
-    if torch.cuda.is_available():
-        print("training on GPU")
-        trainerargs["gpus"] = -1  
 
     if args.callbacks:
         trainer = Trainer(**trainerargs,callbacks = [Check_GradNorm()])

@@ -15,12 +15,13 @@ parameters:
   logger:
     value: 'wandb'
   num_workers:
-    value: 1
+    value: 16
   module:
     value: 'ensemble_dkl'
-#  accelerator:
-#    value: 'ddp'
-
+  accelerator:
+    value: 'ddp'
+  gpus:
+    value: 1
 
 command:
   - ${env}
