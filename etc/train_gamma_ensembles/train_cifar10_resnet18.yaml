@@ -1,4 +1,4 @@
-name: gamma_ensemble_resnet_18
+name: cifar10_ensemble_resnet_18
 program: ../../scripts/run.py
 method: grid
 
@@ -9,7 +9,7 @@ parameters:
   data_dir:
     value: /home/ekellbuch/pytorch_datasets/cifar10_ood/data
   gamma:
-    values: [0, 0.1, 2, 4]
+    values: [1]
   max_epochs:
     value: 100
   logger:
@@ -17,10 +17,9 @@ parameters:
   num_workers:
     value: 1
   module:
-    value: 'ensemble_dkl'
+    value: 'base'
 #  accelerator:
 #    value: 'ddp'
-
 
 command:
   - ${env}
