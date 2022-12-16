@@ -29,10 +29,13 @@ weight_decay: 1e-2
 test_set: "CIFAR10"  
 scheduler: cosine
 
-# gpu strategy
+auto_lr_find: 0
+
 num_workers: 8
+# gpu strategy
 gpus: 1
-accelerator: "ddp"
+accelerator: "dp"
+gpu_id: "0"
 
 # attention arguments for attention ensemble
 lamb: 0.5  #attention ensemble

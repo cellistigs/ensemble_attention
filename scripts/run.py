@@ -10,7 +10,10 @@ import numpy as np
 from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger, TensorBoardLogger
-from ensemble_attention.module import CIFAR10Module,CIFAR10EnsembleModule,CIFAR10AttentionEnsembleModule,CIFAR10AttentionEnsembleSkipModule,CIFAR10AttentionEnsembleMLPSkipModule,CIFAR10EnsembleDKLModule,CIFAR10EnsemblePAC2BModule,CIFAR10EnsembleJS_Unif_Module,CIFAR10EnsembleJS_Avg_Module,CIFAR10EnsembleDKL_Avg_Module
+from ensemble_attention.module import CIFAR10Module,CIFAR10EnsembleModule,\
+    CIFAR10AttentionEnsembleModule,CIFAR10AttentionEnsembleSkipModule,CIFAR10AttentionEnsembleMLPSkipModule,\
+    CIFAR10EnsembleDKLModule,CIFAR10EnsemblePAC2BModule,CIFAR10EnsembleJS_Unif_Module,CIFAR10EnsembleJS_Avg_Module, \
+    CIFAR10EnsembleDKL_Avg_Module, CIFAR10EnsembleJGAPModule
 # from ensemble_attention.callback import Check_GradNorm
 from pytorch_lightning.plugins import ddp_plugin
 
@@ -19,7 +22,8 @@ from cifar10_ood.data import CIFAR10Data,CIFAR10_1Data,CINIC10_Data,CIFAR10_CDat
 
 modules = {"base":CIFAR10Module,
         "ensemble":CIFAR10EnsembleModule,  # train time ensemble
-        "ensemble_dkl":CIFAR10EnsembleDKLModule,  #jgap ensemble
+        "ensemble_dkl":CIFAR10EnsembleDKLModule,  #jgap ensemble with kl divergence
+        "ensemble_jgap":CIFAR10EnsembleJGAPModule,  #jgap ensemble with jgap
         "ensemble_p2b":CIFAR10EnsemblePAC2BModule,  # Ortega ensemble
         "ensemble_js_unif":CIFAR10EnsembleJS_Unif_Module,  # co-training ensemble
         "ensemble_js_avg":CIFAR10EnsembleJS_Avg_Module,  # Mishtal ensemble
@@ -136,6 +140,7 @@ def main(args):
         "max_epochs":args.max_epochs,
         "checkpoint_callback":checkpoint,
         "precision":args.precision,
+        "auto_lr_find": bool(args.get('auto_lr_find', 0)),
         }
 
     if torch.cuda.is_available():

@@ -201,13 +201,15 @@ class CIFAR10EnsembleModule(CIFAR10_Models):
         self.nb_models = hparams.nb_models
 
         self.criterion = torch.nn.CrossEntropyLoss()
+        self.fwd_criterion = torch.nn.NLLLoss()
         self.accuracy = Accuracy()
 
         self.models = torch.nn.ModuleList([all_classifiers[self.hparams.classifier]() for i in range(self.nb_models)]) ## now we add several different instances of the model. 
         #del self.model
     
     def forward(self,batch):
-        """for forward, we want to take the softmax, aggregate the ensemble output, and then take the logit.  
+        """for forward pass, we want to take the softmax,
+        aggregate the ensemble output, take log(p) and apply NNLoss.
 
         """
         images, labels = batch
@@ -221,8 +223,9 @@ class CIFAR10EnsembleModule(CIFAR10_Models):
             normed = softmax(predictions)
             softmaxes.append(normed)
         mean = torch.mean(torch.stack(softmaxes),dim = 0) 
-        ## we can pass this  through directly to the accuracy function. 
-        tloss = self.criterion(mean,labels)## beware: this is a transformed input, don't evaluate on test loss of ensembles. 
+        ## we can pass this  through directly to the accuracy function.
+        logoutput = torch.log(mean)
+        tloss = self.fwd_criterion(logoutput,labels) ## beware: this is a transformed input, don't evaluate on test loss of ensembles.
         accuracy = self.accuracy(mean,labels)
         return tloss,accuracy*100
 
@@ -324,13 +327,14 @@ class CIFAR10EnsembleDKLModule(CIFAR10EnsembleModule):
         accs = []
         softmaxes = []
         for m in self.models:
-            predictions = m(images) ## this just a bunch of unnormalized scores? 
+            # get logits
+            predictions = m(images)
             normed = softmax(predictions)
             softmaxes.append(normed)
             #mloss = self.criterion(predictions, labels)
             #accuracy = self.accuracy(predictions,labels)
             #losses.append(mloss)
-            #accs.append(accuracy) 
+            #accs.append(accuracy)
         logoutput = torch.log(torch.mean(torch.stack(softmaxes),dim = 0))
         mloss = self.traincriterion(logoutput, labels)
         dklloss = torch.mean(self.kl.kl(softmaxes,labels))
@@ -342,6 +346,8 @@ class CIFAR10EnsembleDKLModule(CIFAR10EnsembleModule):
         self.log("loss/train", loss)
         self.log("acc/train", accuracy*100)
         self.log("reg/dkl",dklloss)
+        self.log("reg/mloss", mloss)
+
         return loss
 
     def configure_optimizers(self):
@@ -383,7 +389,99 @@ class CIFAR10EnsembleDKLModule(CIFAR10EnsembleModule):
                 "frequency":1,
                 "name": "learning_rate",
                 }
-        return scheduler    
+        return scheduler
+
+
+class CIFAR10EnsembleJGAPModule(CIFAR10EnsembleModule):
+    """Formulation of the ensemble as a regularized single model with variable weight on regularization.
+
+    """
+
+    def __init__(self, hparams):
+        super().__init__(hparams)
+        self.traincriterion = torch.nn.NLLLoss()
+        self.gamma = hparams.gamma
+
+    def training_step(self, batch, batch_nb):
+        """When we train, we want to train independently.
+        """
+        softmax = torch.nn.Softmax(dim=1)
+
+        images, labels = batch
+        losses = []
+        accs = []
+        softmaxes = []
+        for m in self.models:
+            # get logits
+            predictions = m(images)
+            normed = softmax(predictions)
+            softmaxes.append(normed)
+            mloss = self.criterion(predictions, labels)
+            # accuracy = self.accuracy(predictions,labels)
+            losses.append(mloss)
+            # accs.append(accuracy)
+        logoutput = torch.log(torch.mean(torch.stack(softmaxes), dim=0))
+        mloss = self.traincriterion(logoutput, labels)
+
+        # jensen gap
+        avg_sm_loss = sum(losses)/self.nb_models
+        jgaploss = avg_sm_loss - mloss
+
+        loss = (
+              mloss + self.gamma * jgaploss)  ## with gamma equal to 1, this is the same as the standard ensemble training loss (independent).
+        accuracy = self.accuracy(logoutput, labels)
+
+        lr = self.trainer.lr_schedulers[0]["scheduler"].get_last_lr()[-1]
+        self.log("lr/lr", lr)
+        self.log("loss/train", loss)
+        self.log("acc/train", accuracy * 100)
+        self.log("reg/mloss", mloss)
+        self.log("reg/jgap", jgaploss)
+        self.log("reg/avg_sm_loss", avg_sm_loss)
+        return loss
+
+    def configure_optimizers(self):
+        optimizer = torch.optim.SGD(
+            self.models.parameters(),
+            lr=self.hparams.learning_rate,
+            ## when jointly training, we need to multiply the learning rate times the number of ensembles to make sure that the effective learning rate for each model stays the same.
+            # lr=self.hparams.learning_rate*len(self.models), ## when jointly training, we need to multiply the learning rate times the number of ensembles to make sure that the effective learning rate for each model stays the same.
+            weight_decay=self.hparams.weight_decay,
+            momentum=0.9,
+            nesterov=True,
+        )
+        total_steps = self.hparams.max_epochs * len(self.train_dataloader())
+        scheduler = self.setup_scheduler(optimizer, total_steps)
+        return [optimizer], [scheduler]
+
+    def setup_scheduler(self, optimizer, total_steps):
+        """Chooses between the cosine learning rate scheduler that came with the repo, or step scheduler based on wideresnet training.For the ensemble, we need to manually set the warmup and eta_min parameters to maintain the right scaling for individual models.
+        """
+        if self.hparams.scheduler in [None, "cosine"]:
+            scheduler = {
+                "scheduler": WarmupCosineLR(
+                    optimizer,
+                    warmup_epochs=total_steps * 0.3,
+                    max_epochs=total_steps,
+                    # warmup_start_lr = 1e-8*len(self.models),
+                    # eta_min = 1e-8*len(self.models)
+                    warmup_start_lr=1e-8,
+                    eta_min=1e-8
+                ),
+                "interval": "step",
+                "name": "learning_rate",
+            }
+        elif self.hparams.scheduler == "step":
+            scheduler = {
+                "scheduler": torch.optim.lr_scheduler.MultiStepLR(
+                    optimizer, milestones=[60, 120, 160], gamma=0.2, last_epoch=-1
+                ),
+                "interval": "epoch",
+                "frequency": 1,
+                "name": "learning_rate",
+            }
+        return scheduler
+
 
 class CIFAR10EnsemblePAC2BModule(CIFAR10EnsembleModule):
     """Customized module to train with PAC2B loss from ortega et al. 
@@ -553,7 +651,7 @@ class CIFAR10EnsembleDKL_Avg_Module(CIFAR10EnsembleModule):
         avg_accuracy = sum(accs)/self.nb_models
 
         ## diversity term:
-        divoss = torch.mean(self.dkl.dkl_avg([s for s in softmaxes]))
+        divloss = torch.mean(self.dkl.dkl_avg([s for s in softmaxes]))
 
         loss = (llloss + self.gamma*divloss) ## with gama = 1, this is equal to the PAC2B loss. 
 
