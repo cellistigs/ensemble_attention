@@ -900,6 +900,16 @@ def _resnet(arch, block, layers, pretrained, progress, device, **kwargs):
         model.load_state_dict(state_dict)
     return model
 
+def _resnet_regress(arch, block, layers, pretrained, progress, device, **kwargs):
+    model = ResNet(block,num_classes=1,layers, **kwargs)
+    if pretrained:
+        script_dir = os.path.dirname(__file__)
+        state_dict = torch.load(
+            script_dir + "/state_dicts/" + arch + ".pt", map_location=device
+        )
+        model.load_state_dict(state_dict)
+    return model
+
 def widesubresnet18(baseresnet, index, pretrained=False, progress=True, device="cpu", **kwargs):
     """Constructs a wide (2x) ResNet-18 model.
     Args:
@@ -1004,3 +1014,10 @@ def resnet50(pretrained=False, progress=True, device="cpu", **kwargs):
     return _resnet(
         "resnet50", Bottleneck, [3, 4, 6, 3], pretrained, progress, device, **kwargs
     )
+ 
+def resnet18_regression(pretrained=False,progress=True,device = "cpu",**kwargs):
+    """Constructs a ResNet-18 for regression
+
+    """
+    return _resnet_regress(
+        "resnet18_regress", BasicBlock, [2, 2, 2, 2], pretrained, progress, device, **kwargs)
