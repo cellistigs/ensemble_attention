@@ -37,6 +37,8 @@ gpus: 1
 accelerator: "dp"
 gpu_id: "0"
 
+label_smoothing: 0
+
 # attention arguments for attention ensemble
 lamb: 0.5  #attention ensemble
 embedding_dim: 25 ## attention embedding

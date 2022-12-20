@@ -141,7 +141,8 @@ class CIFAR10Module(CIFAR10_Models):
         print(hparams)
         print(self.hparams)
 
-        self.criterion = torch.nn.CrossEntropyLoss()
+        self.label_smoothing = self.hparams.get('label_smoothing', 0.0)
+        self.criterion = torch.nn.CrossEntropyLoss(label_smoothing=self.label_smoothing)
         self.accuracy = Accuracy()
 
         self.model = all_classifiers[self.hparams.classifier]()
@@ -193,14 +194,15 @@ class CIFAR10Module(CIFAR10_Models):
         return [optimizer], [scheduler]
 
 class CIFAR10EnsembleModule(CIFAR10_Models):   
-    """Customized module to train an ensemble of models independently. Requires that  
+    """Customized module to train an ensemble of models independently
 
     """
     def __init__(self,hparams):
         super().__init__(hparams)
         self.nb_models = hparams.nb_models
 
-        self.criterion = torch.nn.CrossEntropyLoss()
+        self.label_smoothing = self.hparams.get('label_smoothing', 0.0)
+        self.criterion = torch.nn.CrossEntropyLoss(label_smoothing=self.label_smoothing)
         self.fwd_criterion = torch.nn.NLLLoss()
         self.accuracy = Accuracy()
 
@@ -209,8 +211,8 @@ class CIFAR10EnsembleModule(CIFAR10_Models):
     
     def forward(self,batch):
         """for forward pass, we want to take the softmax,
-        aggregate the ensemble output, take log(p) and apply NNLoss.
-
+        aggregate the ensemble output, take log(\bar{f}) and apply NNLoss.
+        prediction  = \bar{f}
         """
         images, labels = batch
         softmax = torch.nn.Softmax(dim = 1)
@@ -247,7 +249,9 @@ class CIFAR10EnsembleModule(CIFAR10_Models):
         return mean,labels
 
     def training_step(self, batch, batch_nb):
-        """When we train, we want to train independently. 
+        """When we train, we want to train independently.
+        Loss is the  average single model loss
+        Loss = 1/M sum_i L( f_i, y), where f_i is the model output for the ith model.
         """
         
         images, labels = batch
@@ -319,6 +323,8 @@ class CIFAR10EnsembleDKLModule(CIFAR10EnsembleModule):
 
     def training_step(self, batch, batch_nb):
         """When we train, we want to train independently. 
+        Loss = NLL(log \bar{f}, y ) + gamma*DKL(softmaxes, label)
+        where DKL= 1/M sum_i^M [log (1/M) - log ((f_i^{(y)})/(\sum_i^M f_i^{(y)}))]
         """
         softmax = torch.nn.Softmax(dim = 1)
         
@@ -404,6 +410,8 @@ class CIFAR10EnsembleJGAPModule(CIFAR10EnsembleModule):
 
     def training_step(self, batch, batch_nb):
         """When we train, we want to train independently.
+        Loss = NLL(log \bar{f}, y ) + gamma*JGAP(softmaxes, label)
+        JGAP = 1/M sum_i^M CE(f_i,y) - NLL(log \bar{f}, y )
         """
         softmax = torch.nn.Softmax(dim=1)
 
@@ -494,6 +502,9 @@ class CIFAR10EnsembleJGAPLModule(CIFAR10EnsembleModule):
 
     def training_step(self, batch, batch_nb):
         """When we train, we want to train independently.
+        Loss =  CE(\bar{f}, y) + gamma*JGAP(logits, label)
+        JGAP = 1/M sum_i^M CE(f_i,y) - CE(\bar{f}, y)
+        where f are logits.
         """
         softmax = torch.nn.Softmax(dim=1)
 
@@ -755,7 +766,13 @@ class CIFAR10EnsembleDKL_Avg_Module(CIFAR10EnsembleModule):
         self.gamma = hparams.gamma
 
     def training_step(self, batch, batch_nb):
-        """When we train, we want to train independently. 
+        """When we train, we want to train independently.
+        Loss = 1/M sum_i CE(f_i, y) + gamma * DKL
+        where
+        DKL = DKL(\bar{f}, f_i) = 1/M sum_j KL(\bar{f}, f_j)
+        implemented as 1/M \sum_{m=1}^M \sum_c=1^{C} \bar{f}_{b,c} * (\log(\bar{f}_{b,c}) - \log(f_{m, b, c}))
+        where \bar{f} is B x C, and f is M x B x C
+        and f_i are the probabilities (not logits).
         """
         softmax = torch.nn.Softmax(dim = 1)
         
