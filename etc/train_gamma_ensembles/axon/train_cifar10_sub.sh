@@ -21,7 +21,7 @@ num_workers=4
 
 elif [ "$(uname)" = "Linux" ]; then
 config_name="run_default_gpu"
-num_workers=16
+num_workers=4
 fi
 
 max_epochs=2

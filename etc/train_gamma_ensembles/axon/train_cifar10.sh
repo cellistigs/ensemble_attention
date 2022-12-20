@@ -9,7 +9,7 @@
 #SBATCH -t 01:00:00
 #SBATCH --mem 8gb
 #SBATCH --gres=gpu:1
-#SBATCH -c 2
+#SBATCH -c 4
 #SBATCH --mail-type=ALL            # Mail events (NONE, BEGIN, END, FAIL, ALL)
 #SBATCH --mail-user=ekb2154@columbia.edu         # Where to send mail (e.g. uni123@columbia.edu)
 . activate interp
@@ -17,7 +17,7 @@
 
 echo "Begin call: scrips/run.py $1"
 pushd ../../../
-python  scrips/run.py $1
+python  scripts/run.py $1
 echo "Ran scrips/run.py $1"
 
 popd
