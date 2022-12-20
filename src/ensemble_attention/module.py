@@ -317,7 +317,7 @@ class CIFAR10EnsembleDKLModule(CIFAR10EnsembleModule):
     """
     def __init__(self,hparams):
         super().__init__(hparams)
-        self.traincriterion = torch.nn.NLLLoss()
+        self.traincriterion = NLLLoss_label_smooth(self.nb_models, self.label_smoothing)
         self.kl = Model_D_KL("torch")
         self.gamma = hparams.gamma
 
@@ -405,7 +405,8 @@ class CIFAR10EnsembleJGAPModule(CIFAR10EnsembleModule):
 
     def __init__(self, hparams):
         super().__init__(hparams)
-        self.traincriterion = torch.nn.NLLLoss()
+
+        self.traincriterion = NLLLoss_label_smooth(self.nb_models, self.label_smoothing)
         self.gamma = hparams.gamma
 
     def training_step(self, batch, batch_nb):
@@ -1152,3 +1153,14 @@ class CIFAR10InterEnsembleModule(CIFAR10_Models):
         scheduler = self.setup_scheduler(optimizer,total_steps)
         return [optimizer], [scheduler]
 
+class NLLLoss_label_smooth(torch.nn.Module):
+    def __init__(self, num_classes, label_smoothing=0.1):
+        super(NLLLoss_label_smooth, self).__init__()
+        self.negative = label_smoothing / (num_classes - 1)
+        self.positive = (1 - label_smoothing)
+
+    def forward(self, log_softmax, target):
+        true_dist = torch.zeros_like(log_softmax)
+        true_dist.fill_(self.negative)
+        true_dist.scatter_(1, target.data.unsqueeze(1), self.positive)
+        return torch.sum(-true_dist * log_softmax, dim=1).mean()

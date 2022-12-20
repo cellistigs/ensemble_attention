@@ -4,7 +4,7 @@
 
 max_epochs=1
 logger="wandb"
-module="ensemble_dkl_avg"
+module="ensemble_jgap"
 seed=0
 
 dataset_dir="${HOME}/pytorch_datasets/cifar10_ood/data"

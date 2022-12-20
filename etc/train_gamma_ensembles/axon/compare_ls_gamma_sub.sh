@@ -28,7 +28,7 @@ max_epochs=100
 logger="wandb"
 label_smoothing=0.1
 
-module="ensemble_dkl"
+module="ensemble_jgap"
 
 for seed in 0 1 2 3 4 
 do
