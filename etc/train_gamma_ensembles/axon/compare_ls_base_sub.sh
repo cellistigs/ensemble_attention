@@ -24,12 +24,12 @@ config_name="run_default_gpu"
 num_workers=4
 fi
 
-max_epochs=2
+max_epochs=100
 logger="wandb"
 label_smoothing=0
 
 module="base"
-for label_smoothing in 0 0.1 0.2 0.5
+for label_smoothing in {0.2,0.5,1.0};
 do
 call_train "--config-name="${config_name}" \
   data_dir=${dataset_dir}  \
