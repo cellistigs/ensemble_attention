@@ -7,6 +7,7 @@ import pytorch_lightning as pl
 import requests
 from torch.utils.data import Dataset,DataLoader
 import torch
+from torchvision.datasets import MNIST
 from tqdm import tqdm 
 import pandas as pd
 
@@ -16,8 +17,8 @@ class WineDataset(Dataset):
             np.random.seed(seed)
         #super().__init__(root_dir,transform = transform,target_transform = target_transform)
         self.root_dir = root_dir
-        self.raw_data_red = pd.read_csv(os.path.join(root_dir,"winequality-red.csv"),sep = ";").values
-        self.raw_data_white = pd.read_csv(os.path.join(root_dir,"winequality-white.csv"),sep = ";").values
+        self.raw_data_red = pd.read_csv(os.path.join(root_dir,"winequality-red.csv"),sep = ";").values.astype(np.float32)
+        self.raw_data_white = pd.read_csv(os.path.join(root_dir,"winequality-white.csv"),sep =";").values.astype(np.float32)
         self.transform = transform
         self.target_transform = target_transform
         if color == None:
@@ -26,18 +27,22 @@ class WineDataset(Dataset):
             self.raw_data = self.raw_data_red
         elif color == "white":    
             self.raw_data = self.raw_data_white
+
+        # normalize data. 
+        mean,std = np.mean(self.raw_data,axis = 0), np.std(self.raw_data,axis = 0)
+        self.normed_data = (self.raw_data-mean)/std
         indices = np.random.permutation(range(len(self.raw_data)))    
         test_indices = indices[:test_size]
         train_indices = indices[test_size:]
         if train == False:
-            self.features = self.raw_data[test_indices,:-1]    
-            self.targets = self.raw_data[test_indices,-1]
+            self.features = self.normed_data[test_indices,:-1]    
+            self.targets = self.normed_data[test_indices,-1:]
         else:    
-            self.features = self.raw_data[train_indices,:-1]    
-            self.targets = self.raw_data[train_indices,-1]
+            self.features = self.normed_data[train_indices,:-1]  
+            self.targets = self.normed_data[train_indices,-1:]
         
     def __len__(self):
-        return len(self.raw_data)
+        return len(self.features)
 
     def __getitem__(self,idx):
         feature,target = self.features[idx],self.targets[idx]
@@ -51,14 +56,17 @@ class WineDataModule(pl.LightningDataModule):
     def __init__(self,args):
         super().__init__()
         self.hparams = args
-        self.wine_predict = WineDataset(self.hparams.data_dir,train = False)
-        self.wine_train = WineDataset(self.hparams.data_dir,train = True)
-    def train_dataloader(self):
+        self.wine_predict = WineDataset(self.hparams.data_dir,train = False,color =
+                self.hparams.winecolor,test_size=1000)
+        self.wine_train = WineDataset(self.hparams.data_dir,train = True,color =
+                self.hparams.winecolor,test_size=self.hparams.testset_size)
+    def train_dataloader(self,shuffle = False,aug = False):
         return DataLoader(self.wine_train,
             batch_size=self.hparams.batch_size,
             num_workers=self.hparams.num_workers,
             drop_last=False,
-            pin_memory=True,)
+            pin_memory=True,
+            shuffle = shuffle)
     def val_dataloader(self):
         return DataLoader(self.wine_predict,
             batch_size=self.hparams.batch_size,
@@ -68,3 +76,30 @@ class WineDataModule(pl.LightningDataModule):
     def test_dataloader(self):
         return self.val_dataloader()
 
+class OneHotTransform():
+    def __init__(self,num_classes):
+        self.num_classes = num_classes
+    def __class__(self,data):    
+        return torch.nn.functional.one_hot(data,self.num_classes)
+
+class MNISTModule(pl.LightningDataModule):
+    def __init__(self,args):
+        super().__init__()
+        self.hparams = args
+        self.mnist_predict = MNIST(self.hparams.data_dir,train = False,transform = None,target_transform =OneHotTransform)
+        self.mnist_train = MNIST(self.hparams.data_dir,train = True,transform = None,target_transform = OneHotTransform)
+    def train_dataloader(self,shuffle = False,aug = False):
+        return DataLoader(self.mnist_train,
+            batch_size=self.hparams.batch_size,
+            num_workers=self.hparams.num_workers,
+            drop_last=False,
+            pin_memory=True,
+            shuffle = shuffle)
+    def val_dataloader(self):
+        return DataLoader(self.mnist_predict,
+            batch_size=self.hparams.batch_size,
+            num_workers=self.hparams.num_workers,
+            drop_last=False,
+            pin_memory=True,)
+    def test_dataloader(self):
+        return self.val_dataloader()
