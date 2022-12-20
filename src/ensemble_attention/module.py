@@ -1,17 +1,19 @@
 import pytorch_lightning as pl
 import torch
-from pytorch_lightning.metrics import Accuracy
+from pytorch_lightning.metrics import Accuracy,ExplainedVariance
 
 from .cifar10_models.densenet import densenet121, densenet161, densenet169
+from .cifar10_models.resnet_cifar import resnet8_cf
 from .cifar10_models.googlenet import googlenet
 from .cifar10_models.inception import inception_v3
 from .cifar10_models.mobilenetv2 import mobilenet_v2
 from .cifar10_models.resnet import resnet18, resnet34, resnet50, wideresnet18, wideresnet18_4, widesubresnet18,wideresnet18_4_grouplinear
 from .cifar10_models.wideresnet_28 import wideresnet28_10
 from .cifar10_models.vgg import vgg11_bn, vgg13_bn, vgg16_bn, vgg19_bn
+from .cifar10_models.rff import rff_regress_1000_wine,rff_regress_10000_wine,rff_regress_100000_wine,linreg_wine
 from .schduler import WarmupCosineLR
 from .layers import AttnComparison,PosEncodings,PosEncodingsSq,PosEncodingsSin
-from .metrics import Model_D_KL,Model_Ortega_Variance,Model_JS_Unif,Model_JS_Avg,Model_DKL_Avg
+from .metrics import Model_D_KL,Model_Ortega_Variance,Model_JS_Unif,Model_JS_Avg,Model_DKL_Avg,Regression_Var
 
 all_classifiers = {
     "vgg11_bn": vgg11_bn,
@@ -22,6 +24,7 @@ all_classifiers = {
     "wideresnet18_4":wideresnet18_4,
     "wideresnet18_4_grouplinear":wideresnet18_4_grouplinear,
     "wideresnet28_10":wideresnet28_10,
+    "resnet8_cifar":resnet8_cf,
     "resnet18": resnet18,
     "resnet34": resnet34,
     "resnet50": resnet50,
@@ -33,7 +36,505 @@ all_classifiers = {
     "inception_v3": inception_v3,
 }
 
+all_regressors = {
+        "rff_1000": rff_regress_1000_wine,
+        "rff_10000": rff_regress_10000_wine,
+        "rff_100000": rff_regress_100000_wine,
+        "linear_reg": linreg_wine
+        }
 
+class Regression_Models(pl.LightningModule):
+    """Base class for regression models. 
+
+    """
+    def __init__(self,hparams):
+        super().__init__()
+        self.hparams = hparams
+    def forward(x):    
+        raise NotImplementedError
+    def training_step():
+        raise NotImplementedError
+
+    def validation_step(self, batch, batch_nb):
+        loss, accuracy = self.forward(batch)
+        self.log("loss/val", loss)
+        self.log("acc/val", accuracy)
+
+    def test_step(self, batch, batch_nb):
+        loss, accuracy = self.forward(batch)
+        self.log("acc/test", accuracy)
+
+    def setup_scheduler(self,optimizer,total_steps):
+        """Chooses between the cosine learning rate scheduler that came with the repo, or step scheduler based on wideresnet training. 
+
+        """
+        if self.hparams.scheduler in [None,"cosine"]: 
+            scheduler = {
+                "scheduler": WarmupCosineLR(
+                    optimizer, warmup_epochs=total_steps*0.3, max_epochs=total_steps
+                ),
+                "interval": "step",
+                "name": "learning_rate",
+            }
+        elif self.hparams.scheduler == "step":    
+            scheduler = {
+                "scheduler": torch.optim.lr_scheduler.MultiStepLR(
+                    optimizer, milestones = [60,120,160], gamma = 0.2, last_epoch=-1
+                ),
+                "interval": "epoch",
+                "frequency":1,
+                "name": "learning_rate",
+                }
+        return scheduler    
+#####Classification As retression
+class ClassasRegressionSingleModel(Regression_Models):
+    def __init__(self, hparams):
+        super().__init__(hparams)
+        print(hparams)
+        print(self.hparams)
+
+        self.criterion = torch.nn.MSELoss()
+        self.acc = Accuracy()
+
+        self.model = all_regressors[self.hparams.classifier]()
+
+    def forward(self, batch):
+        images, labels = batch
+        predictions = self.model(images)
+        loss = self.criterion(predictions, labels)
+        acc = self.acc(predictions, labels)
+        return loss, acc 
+
+    def calibration(self,batch,use_softmax = True):
+        """Like forward, but just exit with the softmax predictions and labels. . 
+        """
+        images, labels = batch
+        predictions = self.model(images)
+        return predictions,labels
+
+    def training_step(self, batch, batch_nb):
+        loss, acc = self.forward(batch)
+        self.log("loss/train", loss)
+        self.log("acc/train", acc)
+        return loss
+
+    def validation_step(self, batch, batch_nb):
+        loss, acc = self.forward(batch)
+        self.log("loss/val", loss)
+        self.log("acc/val", acc)
+
+    def test_step(self, batch, batch_nb):
+        loss, acc = self.forward(batch)
+        self.log("acc/test", acc)
+
+    def configure_optimizers(self):
+        optimizer = torch.optim.SGD(
+            self.model.parameters(),
+            lr=self.hparams.learning_rate,
+            weight_decay=self.hparams.weight_decay,
+            momentum=0.9,
+            nesterov=True,
+        )
+        total_steps = self.hparams.max_epochs * len(self.train_dataloader())
+        scheduler = self.setup_scheduler(optimizer,total_steps)
+        return [optimizer], [scheduler]
+
+class RegressionEnsembleModel(Regression_Models):
+    def __init__(self,hparams):
+        super().__init__(hparams)
+        self.nb_models = hparams.nb_models
+
+        self.criterion = torch.nn.MSELoss()
+        self.acc = Accuracy()
+
+        self.models = torch.nn.ModuleList([all_regressors[self.hparams.classifier]() for i in range(self.nb_models)]) ## now we add several different instances of the model. 
+        #del self.model
+    
+    def forward(self,batch):
+        """for forward, we want to take the softmax, aggregate the ensemble output, and then take the logit.  
+
+        """
+        images, labels = batch
+
+        all_predictions = []
+        for m in self.models:
+            predictions = m(images)
+            all_predictions.append(predictions)
+        mean = torch.mean(torch.stack(all_predictions),dim = 0) 
+        ## we can pass this  through directly to the accuracy function. 
+        tloss = self.criterion(mean,labels)## beware: this is a transformed input, don't evaluate on test loss of ensembles. 
+        accuracy = self.acc(mean,labels)
+        return tloss,accuracy*100
+
+    def calibration(self,batch):
+        """Like forward, but just exit with the predictions and labels. . 
+        """
+        images, labels = batch
+        softmax = torch.nn.Softmax(dim = 1)
+
+        all_predictions = []
+        for m in self.models:
+            predictions = m(images)
+            all_predictions.append(predictions)
+        #gmean = torch.exp(torch.mean(torch.log(torch.stack(softmaxes)),dim = 0)) ## implementation from https://stackoverflow.com/questions/59722983/how-to-calculate-geometric-mean-in-a-differentiable-way   
+        mean = torch.mean(torch.stack(all_predictions),dim = 0) 
+        return mean,labels
+
+    def training_step(self, batch, batch_nb):
+        """When we train, we want to train independently. 
+        """
+        
+        images, labels = batch
+        losses = []
+        accs = []
+        for m in self.models:
+            predictions = m(images) ## this just a bunch of unnormalized scores? 
+            mloss = self.criterion(predictions, labels)
+            accuracy = self.acc(predictions,labels)
+            losses.append(mloss)
+            accs.append(accuracy) 
+        loss = sum(losses)/self.nb_models ## calculate the sum with pure python functions.    
+        avg_accuracy = sum(accs)/self.nb_models
+
+        self.log("loss/train", loss)
+        self.log("acc/train", avg_accuracy*100)
+        return loss
+
+    def configure_optimizers(self):
+        optimizer = torch.optim.SGD(
+            self.models.parameters(),
+            #lr=self.hparams.learning_rate*len(self.models), ## when jointly training, we need to multiply the learning rate times the number of ensembles to make sure that the effective learning rate for each model stays the same. 
+            lr=self.hparams.learning_rate, ## when jointly training, we need to multiply the learning rate times the number of ensembles to make sure that the effective learning rate for each model stays the same. 
+            weight_decay=self.hparams.weight_decay,
+            momentum=0.9,
+            nesterov=True,
+        )
+        total_steps = self.hparams.max_epochs * len(self.train_dataloader())
+        scheduler = self.setup_scheduler(optimizer,total_steps)
+        return [optimizer], [scheduler]
+
+    def setup_scheduler(self,optimizer,total_steps):
+        """Chooses between the cosine learning rate scheduler that came with the repo, or step scheduler based on wideresnet training.For the ensemble, we need to manually set the warmup and eta_min parameters to maintain the right scaling for individual models.  
+        """
+        if self.hparams.scheduler in [None,"cosine"]: 
+            scheduler = {
+                "scheduler": WarmupCosineLR(
+                    optimizer,
+                    warmup_epochs=total_steps*0.3,
+                    max_epochs=total_steps,
+                    warmup_start_lr = 1e-8,
+                    eta_min = 1e-8
+                    #warmup_start_lr = 1e-8*len(self.models),
+                    #eta_min = 1e-8*len(self.models)
+                ),
+                "interval": "step",
+                "name": "learning_rate",
+            }
+        elif self.hparams.scheduler == "step":    
+            scheduler = {
+                "scheduler": torch.optim.lr_scheduler.MultiStepLR(
+                    optimizer, milestones = [60,120,160], gamma = 0.2, last_epoch=-1
+                ),
+                "interval": "epoch",
+                "frequency":1,
+                "name": "learning_rate",
+                }
+        return scheduler    
+
+class RegressionEnsemble_JGModel(RegressionEnsembleModel):
+    def __init__(self,hparams):
+        super().__init__(hparams)
+        self.traincriterion = torch.nn.MSELoss()
+        self.jg = Regression_Var("torch")
+        self.gamma = hparams.gamma
+
+    def training_step(self, batch, batch_nb):
+        """When we train, we want to train independently. 
+        """
+        
+        images, labels = batch
+        all_predictions = []
+        for m in self.models:
+            predictions = m(images) ## this just a bunch of unnormalized scores? 
+            all_predictions.append(predictions)
+        output = torch.mean(torch.stack(all_predictions),dim = 0)
+        mloss = self.traincriterion(output, labels)
+        varloss = torch.mean(self.jg.var(all_predictions))
+        loss = (mloss + self.gamma*varloss) ## with gamma equal to 1, this is the same as the standard ensemble training loss (independent). 
+        accuracy = self.acc(output,labels)
+
+        lr = self.trainer.lr_schedulers[0]["scheduler"].get_last_lr()[-1]
+        self.log("lr/lr",lr)
+        self.log("loss/train", loss)
+        self.log("acc/train", accuracy*100)
+        self.log("reg/dkl",varloss)
+        return loss
+
+    def configure_optimizers(self):
+        optimizer = torch.optim.SGD(
+            self.models.parameters(),
+            lr=self.hparams.learning_rate, ## when jointly training, we need to multiply the learning rate times the number of ensembles to make sure that the effective learning rate for each model stays the same. 
+            #lr=self.hparams.learning_rate*len(self.models), ## when jointly training, we need to multiply the learning rate times the number of ensembles to make sure that the effective learning rate for each model stays the same. 
+            weight_decay=self.hparams.weight_decay,
+            momentum=0.9,
+            nesterov=True,
+        )
+        total_steps = self.hparams.max_epochs * len(self.train_dataloader())
+        scheduler = self.setup_scheduler(optimizer,total_steps)
+        return [optimizer], [scheduler]
+
+    def setup_scheduler(self,optimizer,total_steps):
+        """Chooses between the cosine learning rate scheduler that came with the repo, or step scheduler based on wideresnet training.For the ensemble, we need to manually set the warmup and eta_min parameters to maintain the right scaling for individual models.  
+        """
+        if self.hparams.scheduler in [None,"cosine"]: 
+            scheduler = {
+                "scheduler": WarmupCosineLR(
+                    optimizer,
+                    warmup_epochs=total_steps*0.3,
+                    max_epochs=total_steps,
+                    #warmup_start_lr = 1e-8*len(self.models),
+                    #eta_min = 1e-8*len(self.models)
+                    warmup_start_lr = 1e-8,
+                    eta_min = 1e-8
+                    ),
+                "interval": "step",
+                "name": "learning_rate",
+            }
+        elif self.hparams.scheduler == "step":    
+            scheduler = {
+                "scheduler": torch.optim.lr_scheduler.MultiStepLR(
+                    optimizer, milestones = [60,120,160], gamma = 0.2, last_epoch=-1
+                ),
+                "interval": "epoch",
+                "frequency":1,
+                "name": "learning_rate",
+                }
+        return scheduler    
+
+#####
+class RegressionSingleModel(Regression_Models):
+    def __init__(self, hparams):
+        super().__init__(hparams)
+        print(hparams)
+        print(self.hparams)
+
+        self.criterion = torch.nn.MSELoss()
+        self.ev = ExplainedVariance()#Accuracy()
+
+        self.model = all_regressors[self.hparams.classifier]()
+
+    def forward(self, batch):
+        images, labels = batch
+        predictions = self.model(images)
+        loss = self.criterion(predictions, labels)
+        ev = self.ev(predictions, labels)
+        return loss, ev 
+
+    def calibration(self,batch,use_softmax = True):
+        """Like forward, but just exit with the softmax predictions and labels. . 
+        """
+        images, labels = batch
+        predictions = self.model(images)
+        return predictions,labels
+
+    def training_step(self, batch, batch_nb):
+        loss, ev = self.forward(batch)
+        self.log("loss/train", loss)
+        self.log("acc/train", ev)
+        return loss
+
+    def validation_step(self, batch, batch_nb):
+        loss, ev = self.forward(batch)
+        self.log("loss/val", loss)
+        self.log("acc/val", ev)
+
+    def test_step(self, batch, batch_nb):
+        loss, ev = self.forward(batch)
+        self.log("acc/test", ev)
+
+    def configure_optimizers(self):
+        optimizer = torch.optim.SGD(
+            self.model.parameters(),
+            lr=self.hparams.learning_rate,
+            weight_decay=self.hparams.weight_decay,
+            momentum=0.9,
+            nesterov=True,
+        )
+        total_steps = self.hparams.max_epochs * len(self.train_dataloader())
+        scheduler = self.setup_scheduler(optimizer,total_steps)
+        return [optimizer], [scheduler]
+
+class RegressionEnsembleModel(Regression_Models):
+    def __init__(self,hparams):
+        super().__init__(hparams)
+        self.nb_models = hparams.nb_models
+
+        self.criterion = torch.nn.MSELoss()
+        self.ev = ExplainedVariance()#Accuracy()
+
+        self.models = torch.nn.ModuleList([all_regressors[self.hparams.classifier]() for i in range(self.nb_models)]) ## now we add several different instances of the model. 
+        #del self.model
+    
+    def forward(self,batch):
+        """for forward, we want to take the softmax, aggregate the ensemble output, and then take the logit.  
+
+        """
+        images, labels = batch
+
+        all_predictions = []
+        for m in self.models:
+            predictions = m(images)
+            all_predictions.append(predictions)
+        mean = torch.mean(torch.stack(all_predictions),dim = 0) 
+        ## we can pass this  through directly to the accuracy function. 
+        tloss = self.criterion(mean,labels)## beware: this is a transformed input, don't evaluate on test loss of ensembles. 
+        accuracy = self.ev(mean,labels)
+        return tloss,accuracy*100
+
+    def calibration(self,batch):
+        """Like forward, but just exit with the predictions and labels. . 
+        """
+        images, labels = batch
+        softmax = torch.nn.Softmax(dim = 1)
+
+        all_predictions = []
+        for m in self.models:
+            predictions = m(images)
+            all_predictions.append(predictions)
+        #gmean = torch.exp(torch.mean(torch.log(torch.stack(softmaxes)),dim = 0)) ## implementation from https://stackoverflow.com/questions/59722983/how-to-calculate-geometric-mean-in-a-differentiable-way   
+        mean = torch.mean(torch.stack(all_predictions),dim = 0) 
+        return mean,labels
+
+    def training_step(self, batch, batch_nb):
+        """When we train, we want to train independently. 
+        """
+        
+        images, labels = batch
+        losses = []
+        accs = []
+        for m in self.models:
+            predictions = m(images) ## this just a bunch of unnormalized scores? 
+            mloss = self.criterion(predictions, labels)
+            accuracy = self.ev(predictions,labels)
+            losses.append(mloss)
+            accs.append(accuracy) 
+        loss = sum(losses)/self.nb_models ## calculate the sum with pure python functions.    
+        avg_accuracy = sum(accs)/self.nb_models
+
+        self.log("loss/train", loss)
+        self.log("acc/train", avg_accuracy*100)
+        return loss
+
+    def configure_optimizers(self):
+        optimizer = torch.optim.SGD(
+            self.models.parameters(),
+            #lr=self.hparams.learning_rate*len(self.models), ## when jointly training, we need to multiply the learning rate times the number of ensembles to make sure that the effective learning rate for each model stays the same. 
+            lr=self.hparams.learning_rate, ## when jointly training, we need to multiply the learning rate times the number of ensembles to make sure that the effective learning rate for each model stays the same. 
+            weight_decay=self.hparams.weight_decay,
+            momentum=0.9,
+            nesterov=True,
+        )
+        total_steps = self.hparams.max_epochs * len(self.train_dataloader())
+        scheduler = self.setup_scheduler(optimizer,total_steps)
+        return [optimizer], [scheduler]
+
+    def setup_scheduler(self,optimizer,total_steps):
+        """Chooses between the cosine learning rate scheduler that came with the repo, or step scheduler based on wideresnet training.For the ensemble, we need to manually set the warmup and eta_min parameters to maintain the right scaling for individual models.  
+        """
+        if self.hparams.scheduler in [None,"cosine"]: 
+            scheduler = {
+                "scheduler": WarmupCosineLR(
+                    optimizer,
+                    warmup_epochs=total_steps*0.3,
+                    max_epochs=total_steps,
+                    warmup_start_lr = 1e-8,
+                    eta_min = 1e-8
+                    #warmup_start_lr = 1e-8*len(self.models),
+                    #eta_min = 1e-8*len(self.models)
+                ),
+                "interval": "step",
+                "name": "learning_rate",
+            }
+        elif self.hparams.scheduler == "step":    
+            scheduler = {
+                "scheduler": torch.optim.lr_scheduler.MultiStepLR(
+                    optimizer, milestones = [60,120,160], gamma = 0.2, last_epoch=-1
+                ),
+                "interval": "epoch",
+                "frequency":1,
+                "name": "learning_rate",
+                }
+        return scheduler    
+
+class RegressionEnsemble_JGModel(RegressionEnsembleModel):
+    def __init__(self,hparams):
+        super().__init__(hparams)
+        self.traincriterion = torch.nn.MSELoss()
+        self.jg = Regression_Var("torch")
+        self.gamma = hparams.gamma
+
+    def training_step(self, batch, batch_nb):
+        """When we train, we want to train independently. 
+        """
+        
+        images, labels = batch
+        all_predictions = []
+        for m in self.models:
+            predictions = m(images) ## this just a bunch of unnormalized scores? 
+            all_predictions.append(predictions)
+        output = torch.mean(torch.stack(all_predictions),dim = 0)
+        mloss = self.traincriterion(output, labels)
+        varloss = torch.mean(self.jg.var(all_predictions))
+        loss = (mloss + self.gamma*varloss) ## with gamma equal to 1, this is the same as the standard ensemble training loss (independent). 
+        accuracy = self.ev(output,labels)
+
+        lr = self.trainer.lr_schedulers[0]["scheduler"].get_last_lr()[-1]
+        self.log("lr/lr",lr)
+        self.log("loss/train", loss)
+        self.log("acc/train", accuracy*100)
+        self.log("reg/dkl",varloss)
+        return loss
+
+    def configure_optimizers(self):
+        optimizer = torch.optim.SGD(
+            self.models.parameters(),
+            lr=self.hparams.learning_rate, ## when jointly training, we need to multiply the learning rate times the number of ensembles to make sure that the effective learning rate for each model stays the same. 
+            #lr=self.hparams.learning_rate*len(self.models), ## when jointly training, we need to multiply the learning rate times the number of ensembles to make sure that the effective learning rate for each model stays the same. 
+            weight_decay=self.hparams.weight_decay,
+            momentum=0.9,
+            nesterov=True,
+        )
+        total_steps = self.hparams.max_epochs * len(self.train_dataloader())
+        scheduler = self.setup_scheduler(optimizer,total_steps)
+        return [optimizer], [scheduler]
+
+    def setup_scheduler(self,optimizer,total_steps):
+        """Chooses between the cosine learning rate scheduler that came with the repo, or step scheduler based on wideresnet training.For the ensemble, we need to manually set the warmup and eta_min parameters to maintain the right scaling for individual models.  
+        """
+        if self.hparams.scheduler in [None,"cosine"]: 
+            scheduler = {
+                "scheduler": WarmupCosineLR(
+                    optimizer,
+                    warmup_epochs=total_steps*0.3,
+                    max_epochs=total_steps,
+                    #warmup_start_lr = 1e-8*len(self.models),
+                    #eta_min = 1e-8*len(self.models)
+                    warmup_start_lr = 1e-8,
+                    eta_min = 1e-8
+                    ),
+                "interval": "step",
+                "name": "learning_rate",
+            }
+        elif self.hparams.scheduler == "step":    
+            scheduler = {
+                "scheduler": torch.optim.lr_scheduler.MultiStepLR(
+                    optimizer, milestones = [60,120,160], gamma = 0.2, last_epoch=-1
+                ),
+                "interval": "epoch",
+                "frequency":1,
+                "name": "learning_rate",
+                }
+        return scheduler    
 
 class CIFAR10_Models(pl.LightningModule):
     """Abstract base class for CIFAR10 Models
@@ -553,7 +1054,7 @@ class CIFAR10EnsembleDKL_Avg_Module(CIFAR10EnsembleModule):
         avg_accuracy = sum(accs)/self.nb_models
 
         ## diversity term:
-        divoss = torch.mean(self.dkl.dkl_avg([s for s in softmaxes]))
+        divloss = torch.mean(self.dkl.dkl_avg([s for s in softmaxes]))
 
         loss = (llloss + self.gamma*divloss) ## with gama = 1, this is equal to the PAC2B loss. 
 
