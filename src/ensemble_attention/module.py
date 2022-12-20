@@ -10,7 +10,8 @@ from .cifar10_models.mobilenetv2 import mobilenet_v2
 from .cifar10_models.resnet import resnet18, resnet34, resnet50, wideresnet18, wideresnet18_4, widesubresnet18,wideresnet18_4_grouplinear
 from .cifar10_models.wideresnet_28 import wideresnet28_10
 from .cifar10_models.vgg import vgg11_bn, vgg13_bn, vgg16_bn, vgg19_bn
-from .cifar10_models.rff import rff_regress_1000_wine,rff_regress_10000_wine,rff_regress_100000_wine,linreg_wine
+from .cifar10_models.rff import
+rff_regress_1000_wine,rff_regress_10000_wine,rff_regress_100000_wine,linreg_wine,rff_casregress_1000_mnist,rff_casregress_10000_mnist,rff_casregress_100000_mnist
 from .schduler import WarmupCosineLR
 from .layers import AttnComparison,PosEncodings,PosEncodingsSq,PosEncodingsSin
 from .metrics import Model_D_KL,Model_Ortega_Variance,Model_JS_Unif,Model_JS_Avg,Model_DKL_Avg,Regression_Var
@@ -40,7 +41,10 @@ all_regressors = {
         "rff_1000": rff_regress_1000_wine,
         "rff_10000": rff_regress_10000_wine,
         "rff_100000": rff_regress_100000_wine,
-        "linear_reg": linreg_wine
+        "linear_reg": linreg_wine,
+        "rff_1000_casf": rff_casregress_1000_mnist,
+        "rff_10000_casf": rff_casregress_10000_mnist,
+        "rff_100000_casf": rff_casregress_100000_mnist,
         }
 
 class Regression_Models(pl.LightningModule):
