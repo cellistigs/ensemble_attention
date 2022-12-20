@@ -104,7 +104,7 @@ class ClassasRegressionSingleModel(Regression_Models):
 
     def forward(self, batch):
         images, labels = batch
-        predictions = self.model(images)
+        predictions = self.model(torch.flatten(images,start_dim=1))
         loss = self.criterion(predictions, labels)
         acc = self.acc(predictions, labels)
         return loss, acc 
@@ -113,7 +113,7 @@ class ClassasRegressionSingleModel(Regression_Models):
         """Like forward, but just exit with the softmax predictions and labels. . 
         """
         images, labels = batch
-        predictions = self.model(images)
+        predictions = self.model(torch.flatten(images,start_dim=1))
         return predictions,labels
 
     def training_step(self, batch, batch_nb):
@@ -162,7 +162,7 @@ class RegressionEnsembleModel(Regression_Models):
 
         all_predictions = []
         for m in self.models:
-            predictions = m(images)
+            predictions = m(torch.flatten(images,start_dim=1))
             all_predictions.append(predictions)
         mean = torch.mean(torch.stack(all_predictions),dim = 0) 
         ## we can pass this  through directly to the accuracy function. 
@@ -178,7 +178,7 @@ class RegressionEnsembleModel(Regression_Models):
 
         all_predictions = []
         for m in self.models:
-            predictions = m(images)
+            predictions = m(torch.flatten(images,start_dim=1))
             all_predictions.append(predictions)
         #gmean = torch.exp(torch.mean(torch.log(torch.stack(softmaxes)),dim = 0)) ## implementation from https://stackoverflow.com/questions/59722983/how-to-calculate-geometric-mean-in-a-differentiable-way   
         mean = torch.mean(torch.stack(all_predictions),dim = 0) 
@@ -192,7 +192,7 @@ class RegressionEnsembleModel(Regression_Models):
         losses = []
         accs = []
         for m in self.models:
-            predictions = m(images) ## this just a bunch of unnormalized scores? 
+            predictions = m(torch.flatten(images,start_dim=1)) ## this just a bunch of unnormalized scores? 
             mloss = self.criterion(predictions, labels)
             accuracy = self.acc(predictions,labels)
             losses.append(mloss)
@@ -259,7 +259,7 @@ class RegressionEnsemble_JGModel(RegressionEnsembleModel):
         images, labels = batch
         all_predictions = []
         for m in self.models:
-            predictions = m(images) ## this just a bunch of unnormalized scores? 
+            predictions = m(torch.flatten(images,start_dim=1)) ## this just a bunch of unnormalized scores? 
             all_predictions.append(predictions)
         output = torch.mean(torch.stack(all_predictions),dim = 0)
         mloss = self.traincriterion(output, labels)
