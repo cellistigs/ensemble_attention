@@ -263,7 +263,7 @@ class RegressionEnsemble_JGModel(RegressionEnsembleModel):
             all_predictions.append(predictions)
         output = torch.mean(torch.stack(all_predictions),dim = 0)
         mloss = self.traincriterion(output, labels)
-        varloss = torch.mean(self.jg.var(all_predictions))
+        varloss = torch.mean(torch.sum(self.jg.var(all_predictions),axis = -1))
         loss = (mloss + self.gamma*varloss) ## with gamma equal to 1, this is the same as the standard ensemble training loss (independent). 
         accuracy = self.acc(output,labels)
 
