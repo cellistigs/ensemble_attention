@@ -29,7 +29,13 @@ logger="wandb"
 label_smoothing=0
 
 module="base"
-for label_smoothing in {0.2,0.5,1.0};
+classifier="resnet18"
+
+for classifier in "resnet8" "resnet18"
+do
+for seed in 0 1 2 3
+do
+for label_smoothing in {0.0,0.1,0.2,0.5,1.0};
 do
 call_train "--config-name="${config_name}" \
   data_dir=${dataset_dir}  \
@@ -38,8 +44,11 @@ call_train "--config-name="${config_name}" \
   num_workers=${num_workers} \
   module=${module} \
   label_smoothing=${label_smoothing} \
+  seed=${seed} \
+  classifier=${classifier} \
 
   "
 done
-
+done
+done
 
