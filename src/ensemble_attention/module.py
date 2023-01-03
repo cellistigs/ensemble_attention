@@ -9,6 +9,7 @@ from .cifar10_models.mobilenetv2 import mobilenet_v2
 from .cifar10_models.resnet import resnet18, resnet34, resnet50, wideresnet18, wideresnet18_4, widesubresnet18,wideresnet18_4_grouplinear
 from .cifar10_models.wideresnet_28 import wideresnet28_10
 from .cifar10_models.vgg import vgg11_bn, vgg13_bn, vgg16_bn, vgg19_bn
+from .cifar10_models.lenet import lenet5
 from .schduler import WarmupCosineLR
 from .layers import AttnComparison,PosEncodings,PosEncodingsSq,PosEncodingsSin
 from .metrics import Model_D_KL,Model_Ortega_Variance,Model_JS_Unif,Model_JS_Avg,Model_DKL_Avg
@@ -31,6 +32,7 @@ all_classifiers = {
     "mobilenet_v2": mobilenet_v2,
     "googlenet": googlenet,
     "inception_v3": inception_v3,
+    "lenet5" : lenet5,
 }
 
 

@@ -29,7 +29,10 @@ logger="wandb"
 label_smoothing=0.1
 
 module="ensemble_jgap"
+classifier="resnet18"
 
+for classifier in "lenet5"
+do
 for seed in 0 1 2 3 4 
 do
 for label_smoothing in {0.0,0.1};
@@ -45,8 +48,10 @@ call_train "--config-name="${config_name}" \
   label_smoothing=${label_smoothing} \
   gamma=${gamma} \
   seed=${seed} \
+  classifier=${classifier} \
 
   "
+done
 done
 done
 done

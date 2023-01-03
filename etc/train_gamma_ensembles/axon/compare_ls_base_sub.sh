@@ -31,7 +31,7 @@ label_smoothing=0
 module="base"
 classifier="resnet18"
 
-for classifier in "resnet8" "resnet18"
+for classifier in "lenet5"
 do
 for seed in 0 1 2 3
 do
