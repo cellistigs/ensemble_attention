@@ -142,12 +142,13 @@ class CIFAR10Module(CIFAR10_Models):
         super().__init__(hparams)
         print(hparams)
         print(self.hparams)
-
         self.label_smoothing = self.hparams.get('label_smoothing', 0.0)
         self.criterion = torch.nn.CrossEntropyLoss(label_smoothing=self.label_smoothing)
         self.accuracy = Accuracy()
 
-        self.model = all_classifiers[self.hparams.classifier]()
+        self.num_classes = hparams.get('num_classes', 10)
+        self.model = all_classifiers[self.hparams.classifier](
+            num_classes=self.num_classes)
 
     def forward(self, batch):
         images, labels = batch
@@ -315,11 +316,11 @@ class CIFAR10EnsembleModule(CIFAR10_Models):
 
 class CIFAR10EnsembleDKLModule(CIFAR10EnsembleModule):
     """Formulation of the ensemble as a regularized single model with variable weight on regularization. 
-
+    Note: label_smoothing is not implemented here. instead use ensemble_jgap.
     """
     def __init__(self,hparams):
         super().__init__(hparams)
-        self.traincriterion = NLLLoss_label_smooth(self.nb_models, self.label_smoothing)
+        self.traincriterion = NLLLoss_label_smooth(10, self.label_smoothing)
         self.kl = Model_D_KL("torch")
         self.gamma = hparams.gamma
 
@@ -408,7 +409,7 @@ class CIFAR10EnsembleJGAPModule(CIFAR10EnsembleModule):
     def __init__(self, hparams):
         super().__init__(hparams)
 
-        self.traincriterion = NLLLoss_label_smooth(self.nb_models, self.label_smoothing)
+        self.traincriterion = NLLLoss_label_smooth(10, self.label_smoothing)
         self.gamma = hparams.gamma
 
     def training_step(self, batch, batch_nb):
