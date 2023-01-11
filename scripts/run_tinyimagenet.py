@@ -21,8 +21,8 @@ from cifar10_ood.data import CIFAR10Data,CIFAR10_1Data,CINIC10_Data,CIFAR10_CDat
 from ensemble_attention.data import TinyImagenetData
 from ensemble_attention.module_imagenet import ImagenetModule
 modules = {
-        #"base":ImagenetModule,
-        "base":CIFAR10Module,
+        "base":ImagenetModule,
+        #"base":CIFAR10Module,
         #"""
         #"ensemble":CIFAR10EnsembleModule,  # train time ensemble
         #"ensemble_dkl":CIFAR10EnsembleDKLModule,  #jgap ensemble with kl divergence
