@@ -17,12 +17,12 @@ config_name="run_default_gpu_tinyimagenet"
 #config_name="run_default_gpu"
 
 num_workers=16
-pretrained=0
-module="ensemble_jgap"
-max_epochs=7
-
 
 fi
+
+pretrained=0
+module="base"
+max_epochs=100
 
 pushd ../../
 

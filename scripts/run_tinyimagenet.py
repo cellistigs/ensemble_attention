@@ -19,13 +19,15 @@ from pytorch_lightning.plugins import ddp_plugin
 
 from cifar10_ood.data import CIFAR10Data,CIFAR10_1Data,CINIC10_Data,CIFAR10_CData
 from ensemble_attention.data import TinyImagenetData
-from ensemble_attention.module_imagenet import TinyImagenetModule
+from ensemble_attention.module_imagenet import TinyImagenetModule, TinyImagenetEnsembleModule, TinyImagenetEnsembleJGAPModule
 modules = {
         "base":CIFAR10Module,
         "base_tinyimagenet":TinyImagenetModule,
-        #"ensemble":CIFAR10EnsembleModule,  # train time ensemble
-        "ensemble_dkl":CIFAR10EnsembleDKLModule,  #jgap ensemble with kl divergence
+        "ensemble":CIFAR10EnsembleModule,  # train time ensemble
+        "ensemble_tinyimagenet":TinyImagenetEnsembleModule,  # train time ensemble
+        #"ensemble_dkl":CIFAR10EnsembleDKLModule,  #jgap ensemble with kl divergence
         "ensemble_jgap":CIFAR10EnsembleJGAPModule,  #jgap ensemble with jgap
+        "ensemble_jgap_tinyimagenet":TinyImagenetEnsembleJGAPModule,  #jgap ensemble with jgap
         #"ensemble_jgapl":CIFAR10EnsembleJGAPLModule,  #jgap ensemble with jgap w logit averaging.
         #"ensemble_p2b":CIFAR10EnsemblePAC2BModule,  # Ortega ensemble*
         #"ensemble_js_unif":CIFAR10EnsembleJS_Unif_Module,  # co-training ensemble*
