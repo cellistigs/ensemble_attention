@@ -1,10 +1,8 @@
 #!/bin/bash
 
-# Train gamma ensemble models on cifar 10 for multiple values of gamma.
+# Train resnet18 on tiny imagenet model
 
-max_epochs=1
-logger="tensorboard"
-module="base"
+logger="wandb"
 seed=0
 
 dataset_dir="${HOME}/pytorch_datasets/tiny-imagenet-200"
@@ -19,6 +17,11 @@ config_name="run_default_gpu_tinyimagenet"
 #config_name="run_default_gpu"
 
 num_workers=16
+pretrained=0
+module="ensemble_jgap"
+max_epochs=7
+
+
 fi
 
 pushd ../../
@@ -31,5 +34,6 @@ python scripts/run_tinyimagenet.py \
   num_workers=${num_workers} \
   module=${module} \
   seed=${seed} \
+  pretrained=${pretrained} \
 
 popd

@@ -61,7 +61,7 @@ class Imagenet_Models(pl.LightningModule):
 
 
 
-class ImagenetModule(Imagenet_Models):
+class TinyImagenetModule(Imagenet_Models):
     def __init__(self, hparams):
         super().__init__(hparams)
         print(hparams)
@@ -72,15 +72,14 @@ class ImagenetModule(Imagenet_Models):
 
         self.num_classes = hparams.get('num_classes', 200)
         pretrained = self.hparams.get('pretrained', False)
-        self.model = models.__dict__[self.hparams.classifier](pretrained=pretrained,
-                                                              num_classes=self.num_classes)
+        self.model = models.__dict__[self.hparams.classifier](pretrained=pretrained)
         # Change the last layer
         #in_f = self.model.classifier[-1].in_features
         #self.model.classifier[-1] = nn.Linear(in_f, self.num_classes)
 
-        #self.model.avgpool = nn.AdaptiveAvgPool2d(1)
-        #num_ftrs = self.model.fc.in_features
-        #self.model.fc = nn.Linear(num_ftrs, 200)
+        self.model.avgpool = nn.AdaptiveAvgPool2d(1)
+        num_ftrs = self.model.fc.in_features
+        self.model.fc = nn.Linear(num_ftrs, self.num_classes)
 
     def forward(self, batch):
         images, labels = batch

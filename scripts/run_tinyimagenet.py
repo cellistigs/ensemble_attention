@@ -19,14 +19,13 @@ from pytorch_lightning.plugins import ddp_plugin
 
 from cifar10_ood.data import CIFAR10Data,CIFAR10_1Data,CINIC10_Data,CIFAR10_CData
 from ensemble_attention.data import TinyImagenetData
-from ensemble_attention.module_imagenet import ImagenetModule
+from ensemble_attention.module_imagenet import TinyImagenetModule
 modules = {
-        "base":ImagenetModule,
-        #"base":CIFAR10Module,
-        #"""
+        "base":CIFAR10Module,
+        "base_tinyimagenet":TinyImagenetModule,
         #"ensemble":CIFAR10EnsembleModule,  # train time ensemble
-        #"ensemble_dkl":CIFAR10EnsembleDKLModule,  #jgap ensemble with kl divergence
-        #"ensemble_jgap":CIFAR10EnsembleJGAPModule,  #jgap ensemble with jgap
+        "ensemble_dkl":CIFAR10EnsembleDKLModule,  #jgap ensemble with kl divergence
+        "ensemble_jgap":CIFAR10EnsembleJGAPModule,  #jgap ensemble with jgap
         #"ensemble_jgapl":CIFAR10EnsembleJGAPLModule,  #jgap ensemble with jgap w logit averaging.
         #"ensemble_p2b":CIFAR10EnsemblePAC2BModule,  # Ortega ensemble*
         #"ensemble_js_unif":CIFAR10EnsembleJS_Unif_Module,  # co-training ensemble*
@@ -122,7 +121,7 @@ def custom_eval(model,ind_data,ood_data=None,device="cpu",softmax = True):
         all_labels_ood_array = None
     return all_preds_ind_array,all_labels_ind_array,all_preds_ood_array,all_labels_ood_array
 
-@hydra.main(config_path = os.path.join(script_dir,"../configs/"),config_name = "run_default_gpu")
+@hydra.main(config_path = os.path.join(script_dir,"../configs/"),config_name = "run_default_gpu_tinyimagenet")
 def main(args):
 
     ## Set seeds if given.  
@@ -133,7 +132,7 @@ def main(args):
 
     ## Set up logging.
     logger_name = args.classifier
-    project = args.get("project", "cifar10")
+    project = args.get("project", "tinyimagenet")
 
     if args.logger == "wandb":
         logger = WandbLogger(name=logger_name, project=project)
@@ -142,8 +141,10 @@ def main(args):
 
     ## Configure checkpoint and trainer: 
     checkpoint = ModelCheckpoint(monitor="acc/val", mode="max", save_last=False,
-                                 dirpath = os.path.join(script_dir,"../","models",args.classifier,
-                                                        args.module,datetime.datetime.now().strftime("%m-%d-%y"),
+                                 dirpath = os.path.join(script_dir,"../","models",
+                                                        args.classifier,
+                                                        args.module,
+                                                        datetime.datetime.now().strftime("%m-%d-%y"),
                                                         datetime.datetime.now().strftime("%H_%M_%S")))
 
     trainerargs = {
@@ -213,7 +214,6 @@ def main(args):
         """
     ## what dataset should we evaluate on?
     cifar10data = TinyImagenetData(args)
-    import pdb; pdb.set_trace()
     # import pdb ; pdb.set_trace()
     #cifar10data = CIFAR10Data(args)
 
