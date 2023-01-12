@@ -30,12 +30,13 @@ class TinyImagenetData(pl.LightningDataModule):
     """added optional shuffle parameter for generating random labels.
     added optional aug parameter to apply augmentation or not.
 
+    Note: preprocessing is different for imagenet vs cifar10 models.
     """
     if aug is True:
       transform = transforms.Compose(
         [
           #transforms.Resize(256),
-          transforms.RandomResizedCrop(224),
+          #transforms.RandomResizedCrop(224),
           transforms.RandomHorizontalFlip(),
           transforms.ToTensor(),
           transforms.Normalize(self.mean, self.std),
@@ -74,8 +75,8 @@ class TinyImagenetData(pl.LightningDataModule):
         val_dir,
         transforms.Compose(
           [
-           transforms.Resize(256),
-           transforms.CenterCrop(224),
+           #transforms.Resize(256),
+           #transforms.CenterCrop(224),
            transforms.ToTensor(),
            transforms.Normalize(self.mean, self.std),
            ]
