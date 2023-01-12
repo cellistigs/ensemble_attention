@@ -8,9 +8,11 @@ from .cifar10_models.googlenet import googlenet
 from .cifar10_models.inception import inception_v3
 from .cifar10_models.mobilenetv2 import mobilenet_v2
 from .cifar10_models.resnet import resnet18, resnet34, resnet50, wideresnet18, wideresnet18_4, widesubresnet18,wideresnet18_4_grouplinear
+from .cifar10_models.efficientnet import efficientnet_b2,efficientnet_b1,efficientnet_b0
 from .cifar10_models.wideresnet_28 import wideresnet28_10
 from .cifar10_models.vgg import vgg11_bn, vgg13_bn, vgg16_bn, vgg19_bn
-from .cifar10_models.rff import rff_regress_1000_wine,rff_regress_10000_wine,rff_regress_100000_wine,linreg_wine,rff_casregress_1000_mnist,rff_casregress_10000_mnist,rff_casregress_100000_mnist
+from .cifar10_models.rff import rff_regress_1000_wine,rff_regress_10000_wine,rff_regress_100000_wine,linreg_wine,rff_casregress_1000_mnist,rff_casregress_8000_mnist,rff_casregress_10000_mnist,rff_casregress_100000_mnist
+
 from .schduler import WarmupCosineLR
 from .layers import AttnComparison,PosEncodings,PosEncodingsSq,PosEncodingsSin
 from .metrics import Model_D_KL,Model_Ortega_Variance,Model_JS_Unif,Model_JS_Avg,Model_DKL_Avg,Regression_Var
@@ -34,6 +36,9 @@ all_classifiers = {
     "mobilenet_v2": mobilenet_v2,
     "googlenet": googlenet,
     "inception_v3": inception_v3,
+    "efficientnet_b2": efficientnet_b2,
+    "efficientnet_b1":efficientnet_b1,
+    "efficientnet_b0":efficientnet_b0
 }
 
 all_regressors = {
@@ -43,6 +48,7 @@ all_regressors = {
         "linear_reg": linreg_wine,
         "rff_1000_casf": rff_casregress_1000_mnist,
         "rff_10000_casf": rff_casregress_10000_mnist,
+        "rff_8000_casf": rff_casregress_8000_mnist,
         "rff_100000_casf": rff_casregress_100000_mnist,
         }
 
@@ -168,7 +174,7 @@ class RegressionEnsembleModel(Regression_Models):
         ## we can pass this  through directly to the accuracy function. 
         tloss = self.criterion(mean,labels)## beware: this is a transformed input, don't evaluate on test loss of ensembles. 
         accuracy = self.ev(mean,labels)
-        return tloss,accuracy*100
+        return tloss,accuracy
 
     def calibration(self,batch):
         """Like forward, but just exit with the predictions and labels. . 
@@ -201,7 +207,7 @@ class RegressionEnsembleModel(Regression_Models):
         avg_accuracy = sum(accs)/self.nb_models
 
         self.log("loss/train", loss)
-        self.log("acc/train", avg_accuracy*100)
+        self.log("acc/train", avg_accuracy)
         return loss
 
     def configure_optimizers(self):
@@ -270,7 +276,7 @@ class RegressionEnsemble_JGModel(RegressionEnsembleModel):
         lr = self.trainer.lr_schedulers[0]["scheduler"].get_last_lr()[-1]
         self.log("lr/lr",lr)
         self.log("loss/train", loss)
-        self.log("acc/train", accuracy*100)
+        self.log("acc/train", accuracy)
         self.log("reg/dkl",varloss)
         return loss
 
@@ -394,7 +400,7 @@ class ClassasRegressionEnsembleModel(Regression_Models):
         ## we can pass this  through directly to the accuracy function. 
         tloss = self.criterion(mean,labels)## beware: this is a transformed input, don't evaluate on test loss of ensembles. 
         accuracy = self.acc(mean,labels)
-        return tloss,accuracy*100
+        return tloss,accuracy
 
     def calibration(self,batch):
         """Like forward, but just exit with the predictions and labels. . 
@@ -427,7 +433,7 @@ class ClassasRegressionEnsembleModel(Regression_Models):
         avg_accuracy = sum(accs)/self.nb_models
 
         self.log("loss/train", loss)
-        self.log("acc/train", avg_accuracy*100)
+        self.log("acc/train", avg_accuracy)
         return loss
 
     def configure_optimizers(self):
@@ -471,7 +477,7 @@ class ClassasRegressionEnsembleModel(Regression_Models):
                 }
         return scheduler    
 
-class ClassasRegressionEnsemble_JGModel(RegressionEnsembleModel):
+class ClassasRegressionEnsemble_JGModel(ClassasRegressionEnsembleModel):
     def __init__(self,hparams):
         super().__init__(hparams)
         self.traincriterion = torch.nn.MSELoss()
@@ -489,7 +495,6 @@ class ClassasRegressionEnsemble_JGModel(RegressionEnsembleModel):
             all_predictions.append(predictions)
         output = torch.mean(torch.stack(all_predictions),dim = 0)
         mloss = self.traincriterion(output, labels)
-        import pdb; pdb.set_trace()
         varloss = torch.mean(torch.sum(self.jg.var(all_predictions),axis = -1))
         loss = (mloss + self.gamma*varloss) ## with gamma equal to 1, this is the same as the standard ensemble training loss (independent). 
         accuracy = self.acc(output,labels)
@@ -497,7 +502,7 @@ class ClassasRegressionEnsemble_JGModel(RegressionEnsembleModel):
         lr = self.trainer.lr_schedulers[0]["scheduler"].get_last_lr()[-1]
         self.log("lr/lr",lr)
         self.log("loss/train", loss)
-        self.log("acc/train", accuracy*100)
+        self.log("acc/train", accuracy)
         self.log("reg/dkl",varloss)
         return loss
 
