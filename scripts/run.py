@@ -12,18 +12,20 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger, TensorBoardLogger
 from ensemble_attention.module import CIFAR10Module,CIFAR10EnsembleModule,CIFAR10AttentionEnsembleModule,CIFAR10AttentionEnsembleSkipModule,CIFAR10AttentionEnsembleMLPSkipModule,CIFAR10EnsembleDKLModule,CIFAR10EnsemblePAC2BModule,CIFAR10EnsembleJS_Unif_Module,CIFAR10EnsembleJS_Avg_Module,CIFAR10EnsembleDKL_Avg_Module,RegressionSingleModel, RegressionEnsembleModel, RegressionEnsemble_JGModel,ClassasRegressionSingleModel,ClassasRegressionEnsembleModel, ClassasRegressionEnsemble_JGModel
 from ensemble_attention.callback import Check_GradNorm
+# from ensemble_attention.callback import Check_GradNorm
+from pytorch_lightning.plugins import ddp_plugin
 
 from cifar10_ood.data import CIFAR10Data,CIFAR10_1Data,CINIC10_Data,CIFAR10_CData
 from ensemble_attention.dataset import WineDataModule,MNISTModule
 
 
 modules = {"base":CIFAR10Module,
-        "ensemble":CIFAR10EnsembleModule,
-        "ensemble_dkl":CIFAR10EnsembleDKLModule,
-        "ensemble_p2b":CIFAR10EnsemblePAC2BModule,
-        "ensemble_js_unif":CIFAR10EnsembleJS_Unif_Module,
-        "ensemble_js_avg":CIFAR10EnsembleJS_Avg_Module,
-        "ensemble_dkl_avg":CIFAR10EnsembleDKL_Avg_Module,
+        "ensemble":CIFAR10EnsembleModule,  # train time ensemble
+        "ensemble_dkl":CIFAR10EnsembleDKLModule,  #jgap ensemble
+        "ensemble_p2b":CIFAR10EnsemblePAC2BModule,  # Ortega ensemble
+        "ensemble_js_unif":CIFAR10EnsembleJS_Unif_Module,  # co-training ensemble
+        "ensemble_js_avg":CIFAR10EnsembleJS_Avg_Module,  # Mishtal ensemble
+        "ensemble_dkl_avg":CIFAR10EnsembleDKL_Avg_Module,  # Webb ensembling
         "attention":CIFAR10AttentionEnsembleModule,
         "attentionskip":CIFAR10AttentionEnsembleSkipModule,
         "attentionmlpskip":CIFAR10AttentionEnsembleMLPSkipModule,
@@ -120,8 +122,8 @@ def main(args):
     ## Set seeds if given.  
     if args.seed is not None:
         seed_everything(args.seed)
-    if torch.cuda.is_available():
-        os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu_id
+#    if torch.cuda.is_available():
+#        os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu_id
 
     ## Set up logging. 
     if args.logger == "wandb":
@@ -143,9 +145,19 @@ def main(args):
         "checkpoint_callback":checkpoint,
         "precision":args.precision,
         }
+
     if torch.cuda.is_available():
-        print("training on GPU")
-        trainerargs["gpus"] = -1  
+        print("training on GPU(s) ".format(args.get('gpus', -1)))
+        trainerargs["gpus"] = args.get('gpus', -1)
+
+    if args.get('accelerator', False):
+        trainerargs['accelerator'] = args.accelerator
+
+        if args.accelerator == "ddp":
+            # do we need this for args?
+            args.batch_size = int(args.batch_size / max(1, args.gpus))
+            args.num_workers = int(args.num_workers / max(1, args.gpus))
+            trainerargs['plugins'] = [ddp_plugin.DDPPlugin(find_unused_parameters=False)]
 
     if args.callbacks:
         trainer = Trainer(**trainerargs,callbacks = [Check_GradNorm()])

@@ -8,8 +8,7 @@ corruption: null
 deterministic: 0
 seed: null  
 test_phase: 0   
-random_eval: 0
-dev: 0  
+dev: 0
 logger: "tensorboard"  
 checkpoint: null  
 softmax: 1  
@@ -19,18 +18,22 @@ module: ensemble
 # Trainer arguments 
 classifier: vgg11_bn  
 gamma: 1 ## weight of dkl argument. 
-embedding_dim: 25 ## attention embedding
-start_attention: 10 ## epoch on which to start attentio
-pretrained: 0 ## if we use pretrained models or not. 
+pretrained: 0 ## if we use pretrained models or not.
 pretrained-path: null ## path to pretrained model
 precision: 32  
 batch_size: 256  
 max_epochs: 100  
-num_workers: 8  
-gpu_id: "0"  
-learning_rate: 1e-2  
+learning_rate: 1e-2
 weight_decay: 1e-2  
 test_set: "CIFAR10"  
-lamb: 0.5  
-scheduler: cosine  
+scheduler: cosine
 
+# gpu strategy
+num_workers: 8
+gpus: 1
+accelerator: "ddp"
+
+# attention arguments for attention ensemble
+lamb: 0.5  #attention ensemble
+embedding_dim: 25 ## attention embedding
+start_attention: 10 ## epoch on which to start attentio
