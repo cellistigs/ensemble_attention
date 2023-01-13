@@ -13,11 +13,13 @@ from pytorch_lightning.loggers import WandbLogger, TensorBoardLogger
 from ensemble_attention.module import CIFAR10Module,CIFAR10EnsembleModule,\
     CIFAR10AttentionEnsembleModule,CIFAR10AttentionEnsembleSkipModule,CIFAR10AttentionEnsembleMLPSkipModule,\
     CIFAR10EnsembleDKLModule,CIFAR10EnsemblePAC2BModule,CIFAR10EnsembleJS_Unif_Module,CIFAR10EnsembleJS_Avg_Module, \
-    CIFAR10EnsembleDKL_Avg_Module, CIFAR10EnsembleJGAPModule, CIFAR10EnsembleJGAPLModule
+    CIFAR10EnsembleDKL_Avg_Module, CIFAR10EnsembleJGAPModule, CIFAR10EnsembleJGAPLModule, \
+    RegressionSingleModel, RegressionEnsembleModel, RegressionEnsemble_JGModel,ClassasRegressionSingleModel,ClassasRegressionEnsembleModel, ClassasRegressionEnsemble_JGModel
 # from ensemble_attention.callback import Check_GradNorm
 from pytorch_lightning.plugins import ddp_plugin
 
 from cifar10_ood.data import CIFAR10Data,CIFAR10_1Data,CINIC10_Data,CIFAR10_CData
+from ensemble_attention.dataset import WineDataModule,MNISTModule
 
 
 modules = {"base":CIFAR10Module,
@@ -32,6 +34,12 @@ modules = {"base":CIFAR10Module,
         "attention":CIFAR10AttentionEnsembleModule,
         "attentionskip":CIFAR10AttentionEnsembleSkipModule,
         "attentionmlpskip":CIFAR10AttentionEnsembleMLPSkipModule,
+        "regress":RegressionSingleModel,
+        "regress_ensemble":RegressionEnsembleModel,
+        "regress_ensemble_dkl":RegressionEnsemble_JGModel,
+        "casregress":ClassasRegressionSingleModel,
+        "casregress_ensemble":ClassasRegressionEnsembleModel,
+        "casregress_ensemble_dkl":ClassasRegressionEnsemble_JGModel
         }
 
 script_dir = os.path.abspath(os.path.dirname(__file__))
@@ -196,7 +204,13 @@ def main(args):
             model.model.load_state_dict(torch.load(state_dict))
             
     ## what dataset should we evaluate on? 
-    cifar10data = CIFAR10Data(args)
+    if args.test_set == "CIFAR10":
+        ind_data = CIFAR10Data(args)
+    elif args.test_set == "wine":    
+        ind_data = WineDataModule(args)
+    elif args.test_set == "mnist":    
+        ind_data = MNISTModule(args)
+
     if args.ood_dataset == "cifar10_1":
         ood_data = CIFAR10_1Data(args,version =args.version)
     elif args.ood_dataset == "cinic10":    
@@ -205,20 +219,24 @@ def main(args):
         assert args.corruption, "for cifar10_c, corruption must be given."
         assert args.level, "for cifar10_c, level must be given"
         ood_data = CIFAR10_CData(args)
+    elif args.ood_dataset == "wine":    
+        ood_data = WineDataModule(args)
+    elif args.ood_dataset == "mnist":    
+        ood_data = MNISTModule(args)
 
     ## do we train the model or not? 
     if bool(args.test_phase) or bool(args.random_eval):
         pass
     else:
-        trainer.fit(model, cifar10data)
+        trainer.fit(model, ind_data)
 
     ## testing and evaluation : 
     data = {"in_dist_acc":None,"out_dist_acc":None}
-    data["in_dist_acc"] = trainer.test(model, cifar10data.test_dataloader())[0]["acc/test"]
+    data["in_dist_acc"] = trainer.test(model, ind_data.test_dataloader())[0]["acc/test"]
     data["out_dist_acc"] = trainer.test(model, ood_data.test_dataloader())[0]["acc/test"]
 
-    preds_ind, labels_ind, preds_ood, labels_ood = custom_eval(model,cifar10data,ood_data,device,softmax = bool(args.softmax))
-    preds_train,labels_train = traindata_eval(model,cifar10data,device,softmax = bool(args.softmax))
+    preds_ind, labels_ind, preds_ood, labels_ood = custom_eval(model,ind_data,ood_data,device,softmax = bool(args.softmax))
+    preds_train,labels_train = traindata_eval(model,ind_data,device,softmax = bool(args.softmax))
 
     full_path = "." #os.path.join(results_dir,"robust_results{}_{}_{}".format(datetime.datetime.now().strftime("%m-%d-%y_%H:%M.%S"),args.module,args.classifier))
     np.save("ind_preds",preds_ind)
@@ -234,6 +252,12 @@ def main(args):
     elif args.ood_dataset == "cifar10_c":    
         np.save("ood_cifar10_c_{}_{}_preds".format(args.corruption,args.level),preds_ood)
         np.save("ood_cifar10_c_{}_{}_labels".format(args.corruption,args.level),labels_ood)
+    elif args.ood_dataset == "wine":
+        np.save("ood_wine_{}_{}_preds".format(args.corruption,args.level),preds_ood)
+        np.save("ood_wine_{}_{}_labels".format(args.corruption,args.level),labels_ood)
+    elif args.ood_dataset == "mnist":
+        np.save("ood_mnist_{}_{}_preds".format(args.corruption,args.level),preds_ood)
+        np.save("ood_mnist_{}_{}_labels".format(args.corruption,args.level),labels_ood)
     else:     
         raise Exception("option for ood dataset not recognized.")
     ## write metadata

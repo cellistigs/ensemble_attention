@@ -395,7 +395,7 @@ class Model_JS_Avg(object):
         assert cost_format in ["torch","numpy"], "format must be either `torch` or `numpy`"
         self.format = cost_format
 
-    def js_avg(self, probs):
+    def js_avg(self,probs):
         if self.format == "numpy":
             return self.js_avg_numpy(probs)
         elif self.format == "torch":
@@ -456,7 +456,7 @@ class Model_DKL_Avg(object):
         assert cost_format in ["torch","numpy"], "format must be either `torch` or `numpy`"
         self.format = cost_format
 
-    def dkl_avg(self, probs):
+    def dkl_avg(self,probs):
         if self.format == "numpy":
             return self.dkl_avg_numpy(probs)
         elif self.format == "torch":
@@ -484,3 +484,21 @@ class Model_DKL_Avg(object):
         avg_kl = torch.mean(single_model_kl,axis = 0)
         
         return avg_kl
+
+class Regression_Var(object):
+    def __init__(self,cost_format):
+        assert cost_format in ["torch","numpy"]
+    def var(self,preds):
+        if self.format == "numpy":
+            return self.var_numpy(preds)
+        elif self.format == "torch":
+            return self.var_torch(preds)
+    def var_numpy(preds):    
+        preds_array = np.stack(preds,axis = 0)
+        var = np.var(preds_array,axis = 0)
+        return var
+
+    def var_torch(preds):
+        preds_array = np.stack(preds,axis = 0)
+        var = torch.var(preds_array,axis = 0, unbiased = False)
+        return var
