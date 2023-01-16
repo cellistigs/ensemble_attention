@@ -32,7 +32,7 @@ learning_rate=1e-1 #1e-2
 weight_decay=1e-2 #1e-2
 batch_size=64 #256
 
-for classifier in "lenet5"
+for classifier in "wideresnet28_10"
 do
 for seed in 0
 do
