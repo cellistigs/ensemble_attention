@@ -444,7 +444,7 @@ class ClassasRegressionEnsembleModelOneHot(Regression_Models):
         super().__init__(hparams)
         self.nb_models = hparams.nb_models
 
-        self.acc = Accuracy()
+        self.accuracy = Accuracy()
         self.num_classes = hparams.get('num_classes', 10)
         self.criterion = MSELoss_classification(num_classes=self.num_classes)
 
@@ -466,7 +466,7 @@ class ClassasRegressionEnsembleModelOneHot(Regression_Models):
         ## we can pass this  through directly to the accuracy function.
         tloss = self.criterion(mean, labels)
         # accuracy = self.acc(mean, labels)
-        accuracy = self.acc(mean.max(1)[1], labels)
+        accuracy = self.accuracy(mean.max(1)[1], labels)
         return tloss, accuracy*100
 
     def calibration(self, batch):
@@ -492,7 +492,7 @@ class ClassasRegressionEnsembleModelOneHot(Regression_Models):
         for m in self.models:
             predictions = m(images)
             mloss = self.criterion(predictions, labels)
-            accuracy = self.acc(predictions.max(1)[1], labels)
+            accuracy = self.accuracy(predictions.max(1)[1], labels)
             losses.append(mloss)
             accs.append(accuracy)
         loss = sum(losses) / self.nb_models  ## calculate the sum with pure python functions.
@@ -543,6 +543,56 @@ class ClassasRegressionEnsembleModelOneHot(Regression_Models):
                 "name": "learning_rate",
             }
         return scheduler
+
+
+class ClassasRegressionEnsembleJGAPModelOneHot(ClassasRegressionEnsembleModelOneHot):
+    """Formulation of the ensemble as a regularized single model with variable weight on regularization.
+
+    """
+
+    def __init__(self, hparams):
+        super().__init__(hparams)
+
+        self.traincriterion = MSELoss_classification(num_classes=self.num_classes)
+        self.gamma = hparams.gamma
+
+    def training_step(self, batch, batch_nb):
+        """When we train, we want to train independently.
+        Loss = NLL(log \bar{f}, y ) + gamma*JGAP(predictions, label)
+        JGAP = avg_sm_loss - mloss
+        """
+
+        images, labels = batch
+        losses = []
+        accs = []
+        softmaxes = []
+        for m in self.models:
+            # get logits
+            predictions = m(images)
+            softmaxes.append(predictions)
+            mloss = self.criterion(predictions, labels)
+            # accuracy = self.accuracy(predictions,labels)
+            losses.append(mloss)
+            # accs.append(accuracy)
+        logoutput = torch.mean(torch.stack(softmaxes), dim=0)
+        mloss = self.traincriterion(logoutput, labels)
+
+        # jensen gap
+        avg_sm_loss = sum(losses)/self.nb_models
+        jgaploss = avg_sm_loss - mloss
+
+        loss = (
+              mloss + self.gamma * jgaploss)  ## with gamma equal to 1, this is the same as the standard ensemble training loss (independent).
+        accuracy = self.accuracy(logoutput.max(1)[1], labels)
+
+        lr = self.trainer.lr_schedulers[0]["scheduler"].get_last_lr()[-1]
+        self.log("lr/lr", lr)
+        self.log("loss/train", loss)
+        self.log("acc/train", accuracy * 100)
+        self.log("reg/mloss", mloss)
+        self.log("reg/jgap", jgaploss)
+        self.log("reg/avg_sm_loss", avg_sm_loss)
+        return loss
 
 
 class ClassasRegressionEnsembleModel(Regression_Models):

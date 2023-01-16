@@ -16,7 +16,8 @@ from ensemble_attention.module import CIFAR10Module,CIFAR10EnsembleModule,\
     CIFAR10EnsembleDKL_Avg_Module, CIFAR10EnsembleJGAPModule, CIFAR10EnsembleJGAPLModule, \
     RegressionSingleModel, RegressionEnsembleModel, RegressionEnsemble_JGModel, \
     ClassasRegressionSingleModel,ClassasRegressionEnsembleModel, ClassasRegressionEnsemble_JGModel, \
-    ClassasRegressionSingleModelOneHot, ClassasRegressionEnsembleModelOneHot
+    ClassasRegressionSingleModelOneHot, ClassasRegressionEnsembleModelOneHot, ClassasRegressionEnsembleJGAPModelOneHot
+
 # from ensemble_attention.callback import Check_GradNorm
 from pytorch_lightning.plugins import ddp_plugin
 
@@ -44,6 +45,7 @@ modules = {"base":CIFAR10Module,
         "casregress_ensemble_dkl":ClassasRegressionEnsemble_JGModel,
         "casregress_onehot":ClassasRegressionSingleModelOneHot,
         "casregress_ensemble_onehot":ClassasRegressionEnsembleModelOneHot,
+        "casregress_ensemble_jgap_onehot":ClassasRegressionEnsembleJGAPModelOneHot,
         }
 
 script_dir = os.path.abspath(os.path.dirname(__file__))
