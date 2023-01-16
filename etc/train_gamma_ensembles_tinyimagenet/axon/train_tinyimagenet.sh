@@ -6,7 +6,7 @@
 
 #SBATCH -J 'slurm_ekb'
 #SBATCH -o slurm_ekb-%j.out
-#SBATCH -t 08:00:00
+#SBATCH -t 23:00:00
 #SBATCH --mem 8gb
 #SBATCH --gres=gpu:1
 #SBATCH -c 4
