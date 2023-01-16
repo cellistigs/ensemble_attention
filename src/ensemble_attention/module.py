@@ -392,17 +392,15 @@ class ClassasRegressionSingleModelOneHot(Regression_Models):
         print(hparams)
         print(self.hparams)
 
-        self.criterion = torch.nn.MSELoss()  #TODO: Not used
         self.acc = Accuracy()
         self.num_classes = hparams.get('num_classes', 10)
         self.model = all_classifiers[self.hparams.classifier]()
+        self.criterion = MSELoss_classification(num_classes=self.num_classes)
 
     def forward(self, batch):
         images, labels = batch
         predictions = self.model(images)
-        labels_onehot = torch.nn.functional.one_hot(labels, self.num_classes).to(torch.float32)
-        #loss = self.criterion(predictions, labels_onehot)
-        loss = torch.pow(predictions - labels_onehot, 2).mean(1).mean(0)
+        loss = self.criterion(predictions, labels)
         acc = self.acc(predictions.max(1)[1], labels)
         return loss, acc*100
 
@@ -446,9 +444,9 @@ class ClassasRegressionEnsembleModelOneHot(Regression_Models):
         super().__init__(hparams)
         self.nb_models = hparams.nb_models
 
-        self.criterion = torch.nn.MSELoss()  #TODO: Not used
         self.acc = Accuracy()
         self.num_classes = hparams.get('num_classes', 10)
+        self.criterion = MSELoss_classification(num_classes=self.num_classes)
 
         self.models = torch.nn.ModuleList([all_classifiers[self.hparams.classifier]() for i in range(
             self.nb_models)])  ## now we add several different instances of the model.
@@ -466,9 +464,7 @@ class ClassasRegressionEnsembleModelOneHot(Regression_Models):
             all_predictions.append(predictions)
         mean = torch.mean(torch.stack(all_predictions), dim=0)
         ## we can pass this  through directly to the accuracy function.
-        labels_onehot = torch.nn.functional.one_hot(labels, self.num_classes).to(torch.float32)
-        # tloss = self.criterion(mean, labels)
-        tloss = torch.pow(mean - labels_onehot, 2).mean(1).mean(0)
+        tloss = self.criterion(mean, labels)
         # accuracy = self.acc(mean, labels)
         accuracy = self.acc(mean.max(1)[1], labels)
         return tloss, accuracy*100
@@ -495,10 +491,7 @@ class ClassasRegressionEnsembleModelOneHot(Regression_Models):
         accs = []
         for m in self.models:
             predictions = m(images)
-            #mloss = self.criterion(predictions, labels)
-            #accuracy = self.acc(predictions, labels)
-            labels_onehot = torch.nn.functional.one_hot(labels, self.num_classes).to(torch.float32)
-            mloss = torch.pow(predictions - labels_onehot, 2).mean(1).mean(0)
+            mloss = self.criterion(predictions, labels)
             accuracy = self.acc(predictions.max(1)[1], labels)
             losses.append(mloss)
             accs.append(accuracy)
@@ -1858,3 +1851,26 @@ class NLLLoss_label_smooth(torch.nn.Module):
         true_dist.fill_(self.negative)
         true_dist.scatter_(1, target.data.unsqueeze(1), self.positive)
         return torch.sum(-true_dist * log_softmax, dim=1).mean()
+
+
+def mse_loss_classification(predictions, labels_onehot):
+    """
+    MSE loss for classification as (1) in https://arxiv.org/pdf/2006.07322.pdf.
+    :return: loss, float
+    """
+    loss = torch.pow(predictions - labels_onehot, 2).mean(1).mean(0)
+    return loss
+
+
+class MSELoss_classification(torch.nn.Module):
+    """ Class to compute MSE loss for classification
+
+    """
+    def __init__(self, num_classes):
+        self.num_classes = num_classes
+        super(MSELoss_classification, self).__init__()
+
+    def forward(self, predictions, labels):
+        labels_onehot = torch.nn.functional.one_hot(labels, self.num_classes).to(torch.float32)
+        loss = mse_loss_classification(predictions, labels_onehot)
+        return loss
