@@ -1,6 +1,6 @@
 # Program arguments: 
 data_dir: /home/ubuntu/cifar10_ood/data/ 
-ood_dataset: cifar10_1  
+ood_dataset: cifar10_1
 callbacks: 0 ## whether to use callbacks to debug. 
 version: v4 
 level: null  
@@ -15,6 +15,8 @@ softmax: 1
 nb_models: 4  
 module: ensemble  
 
+random_eval: 0
+
 # Trainer arguments 
 classifier: vgg11_bn  
 gamma: 1 ## weight of dkl argument. 
@@ -27,7 +29,6 @@ learning_rate: 1e-2
 weight_decay: 1e-2  
 test_set: "CIFAR10"  
 scheduler: cosine
-
 auto_lr_find: 0
 
 num_workers: 8

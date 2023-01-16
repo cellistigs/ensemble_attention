@@ -3,17 +3,21 @@ import torch
 from pytorch_lightning.metrics import Accuracy,ExplainedVariance
 
 from .cifar10_models.densenet import densenet121, densenet161, densenet169
-from .cifar10_models.resnet_cifar import resnet8_cf
 from .cifar10_models.googlenet import googlenet
 from .cifar10_models.inception import inception_v3
 from .cifar10_models.mobilenetv2 import mobilenet_v2
 from .cifar10_models.resnet import resnet18, resnet34, resnet50, wideresnet18, wideresnet18_4, widesubresnet18,wideresnet18_4_grouplinear
-from .cifar10_models.efficientnet import efficientnet_b2,efficientnet_b1,efficientnet_b0
 from .cifar10_models.wideresnet_28 import wideresnet28_10
 from .cifar10_models.vgg import vgg11_bn, vgg13_bn, vgg16_bn, vgg19_bn
 from .cifar10_models.lenet import lenet5
-from .cifar10_models.rff import rff_regress_1000_wine,rff_regress_10000_wine,rff_regress_100000_wine,linreg_wine,rff_casregress_1000_mnist,rff_casregress_8000_mnist,rff_casregress_10000_mnist,rff_casregress_100000_mnist
-
+from .cifar10_models.rff import rff_regress_1000_wine,rff_regress_10000_wine,rff_regress_100000_wine,linreg_wine,rff_casregress_1000_mnist,rff_casregress_10000_mnist,rff_casregress_100000_mnist
+from .cifar10_models.wideresnet import wideresnet28_20
+# ----------------
+# missing models in public codebase
+# from .cifar10_models.resnet_cifar import resnet8_cf
+#from .cifar10_models.efficientnet import efficientnet_b2,efficientnet_b1,efficientnet_b0
+#from .cifar10_models.rff import rff_casregress_8000_mnist
+# ----------------
 from .schduler import WarmupCosineLR
 from .layers import AttnComparison,PosEncodings,PosEncodingsSq,PosEncodingsSin
 from .metrics import Model_D_KL,Model_Ortega_Variance,Model_JS_Unif,Model_JS_Avg,Model_DKL_Avg,Regression_Var
@@ -27,7 +31,6 @@ all_classifiers = {
     "wideresnet18_4":wideresnet18_4,
     "wideresnet18_4_grouplinear":wideresnet18_4_grouplinear,
     "wideresnet28_10":wideresnet28_10,
-    "resnet8_cifar":resnet8_cf,
     "resnet18": resnet18,
     "resnet34": resnet34,
     "resnet50": resnet50,
@@ -37,10 +40,13 @@ all_classifiers = {
     "mobilenet_v2": mobilenet_v2,
     "googlenet": googlenet,
     "inception_v3": inception_v3,
-    "lenet5" : lenet5,
-    "efficientnet_b2": efficientnet_b2,
-    "efficientnet_b1":efficientnet_b1,
-    "efficientnet_b0":efficientnet_b0
+    "lenet5": lenet5,
+    "wideresnet28_20" : wideresnet28_20
+    # missing from public codebase
+    #"resnet8_cifar": resnet8_cf,
+    #"efficientnet_b2": efficientnet_b2,
+    #"efficientnet_b1":efficientnet_b1,
+    #"efficientnet_b0":efficientnet_b0
 }
 
 all_regressors = {
@@ -50,9 +56,11 @@ all_regressors = {
         "linear_reg": linreg_wine,
         "rff_1000_casf": rff_casregress_1000_mnist,
         "rff_10000_casf": rff_casregress_10000_mnist,
-        "rff_8000_casf": rff_casregress_8000_mnist,
         "rff_100000_casf": rff_casregress_100000_mnist,
-        }
+        # missing from public codebase
+        # "rff_8000_casf": rff_casregress_8000_mnist,
+
+}
 
 class Regression_Models(pl.LightningModule):
     """Base class for regression models. 
@@ -376,6 +384,63 @@ class ClassasRegressionSingleModel(Regression_Models):
         total_steps = self.hparams.max_epochs * len(self.train_dataloader())
         scheduler = self.setup_scheduler(optimizer,total_steps)
         return [optimizer], [scheduler]
+
+
+class ClassasRegressionSingleModelOneHot(Regression_Models):
+    def __init__(self, hparams):
+        super().__init__(hparams)
+        print(hparams)
+        print(self.hparams)
+
+        self.criterion = torch.nn.MSELoss()
+        self.acc = Accuracy()
+        self.num_classes = hparams.get('num_classes', 10)
+        self.model = all_classifiers[self.hparams.classifier]()
+
+    def forward(self, batch):
+        images, labels = batch
+        predictions = self.model(images)
+        labels_onehot = torch.nn.functional.one_hot(labels, self.num_classes).to(torch.float32)
+        #loss = self.criterion(predictions, labels_onehot)
+        loss = torch.pow(predictions - labels_onehot, 2).mean(1).mean(0)
+        #import pdb; pdb.set_trace()
+        acc = self.acc(predictions.max(1)[1], labels)
+        return loss, acc*100
+
+    def calibration(self,batch,use_softmax = False):
+        """Like forward, but just exit with the softmax predictions and labels. .
+        """
+        images, labels = batch
+        predictions = self.model(images)
+        return predictions,labels
+
+    def training_step(self, batch, batch_nb):
+        loss, acc = self.forward(batch)
+        self.log("loss/train", loss)
+        self.log("acc/train", acc)
+        return loss
+
+    def validation_step(self, batch, batch_nb):
+        loss, acc = self.forward(batch)
+        self.log("loss/val", loss)
+        self.log("acc/val", acc)
+
+    def test_step(self, batch, batch_nb):
+        loss, acc = self.forward(batch)
+        self.log("acc/test", acc)
+
+    def configure_optimizers(self):
+        optimizer = torch.optim.SGD(
+            self.model.parameters(),
+            lr=self.hparams.learning_rate,
+            weight_decay=self.hparams.weight_decay,
+            momentum=0.9,
+            nesterov=True,
+        )
+        total_steps = self.hparams.max_epochs * len(self.train_dataloader())
+        scheduler = self.setup_scheduler(optimizer,total_steps)
+        return [optimizer], [scheduler]
+
 
 class ClassasRegressionEnsembleModel(Regression_Models):
     def __init__(self,hparams):
