@@ -403,7 +403,6 @@ class ClassasRegressionSingleModelOneHot(Regression_Models):
         labels_onehot = torch.nn.functional.one_hot(labels, self.num_classes).to(torch.float32)
         #loss = self.criterion(predictions, labels_onehot)
         loss = torch.pow(predictions - labels_onehot, 2).mean(1).mean(0)
-        #import pdb; pdb.set_trace()
         acc = self.acc(predictions.max(1)[1], labels)
         return loss, acc*100
 
