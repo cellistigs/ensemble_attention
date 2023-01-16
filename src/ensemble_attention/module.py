@@ -392,7 +392,7 @@ class ClassasRegressionSingleModelOneHot(Regression_Models):
         print(hparams)
         print(self.hparams)
 
-        self.criterion = torch.nn.MSELoss()
+        self.criterion = torch.nn.MSELoss()  #TODO: Not used
         self.acc = Accuracy()
         self.num_classes = hparams.get('num_classes', 10)
         self.model = all_classifiers[self.hparams.classifier]()
@@ -439,6 +439,117 @@ class ClassasRegressionSingleModelOneHot(Regression_Models):
         total_steps = self.hparams.max_epochs * len(self.train_dataloader())
         scheduler = self.setup_scheduler(optimizer,total_steps)
         return [optimizer], [scheduler]
+
+
+class ClassasRegressionEnsembleModelOneHot(Regression_Models):
+    def __init__(self, hparams):
+        super().__init__(hparams)
+        self.nb_models = hparams.nb_models
+
+        self.criterion = torch.nn.MSELoss()  #TODO: Not used
+        self.acc = Accuracy()
+        self.num_classes = hparams.get('num_classes', 10)
+
+        self.models = torch.nn.ModuleList([all_classifiers[self.hparams.classifier]() for i in range(
+            self.nb_models)])  ## now we add several different instances of the model.
+        # del self.model
+
+
+    def forward(self, batch):
+        """for forward, we want to take the softmax, aggregate the ensemble output, and then take the logit.
+
+        """
+        images, labels = batch
+        all_predictions = []
+        for m in self.models:
+            predictions = m(images)
+            all_predictions.append(predictions)
+        mean = torch.mean(torch.stack(all_predictions), dim=0)
+        ## we can pass this  through directly to the accuracy function.
+        labels_onehot = torch.nn.functional.one_hot(labels, self.num_classes).to(torch.float32)
+        # tloss = self.criterion(mean, labels)
+        tloss = torch.pow(mean - labels_onehot, 2).mean(1).mean(0)
+        # accuracy = self.acc(mean, labels)
+        accuracy = self.acc(mean.max(1)[1], labels)
+        return tloss, accuracy*100
+
+    def calibration(self, batch):
+        """Like forward, but just exit with the predictions and labels. .
+        """
+        images, labels = batch
+
+        all_predictions = []
+        for m in self.models:
+            predictions = m(images)
+            all_predictions.append(predictions)
+        # gmean = torch.exp(torch.mean(torch.log(torch.stack(softmaxes)),dim = 0)) ## implementation from https://stackoverflow.com/questions/59722983/how-to-calculate-geometric-mean-in-a-differentiable-way
+        mean = torch.mean(torch.stack(all_predictions), dim=0)
+        return mean, labels
+
+    def training_step(self, batch, batch_nb):
+        """When we train, we want to train independently.
+        """
+
+        images, labels = batch
+        losses = []
+        accs = []
+        for m in self.models:
+            predictions = m(images)
+            #mloss = self.criterion(predictions, labels)
+            #accuracy = self.acc(predictions, labels)
+            labels_onehot = torch.nn.functional.one_hot(labels, self.num_classes).to(torch.float32)
+            mloss = torch.pow(predictions - labels_onehot, 2).mean(1).mean(0)
+            accuracy = self.acc(predictions.max(1)[1], labels)
+            losses.append(mloss)
+            accs.append(accuracy)
+        loss = sum(losses) / self.nb_models  ## calculate the sum with pure python functions.
+        avg_accuracy = sum(accs) / self.nb_models
+
+        self.log("loss/train", loss)
+        self.log("acc/train", avg_accuracy)
+        return loss
+
+    def configure_optimizers(self):
+        optimizer = torch.optim.SGD(
+            self.models.parameters(),
+            # lr=self.hparams.learning_rate*len(self.models), ## when jointly training, we need to multiply the learning rate times the number of ensembles to make sure that the effective learning rate for each model stays the same.
+            lr=self.hparams.learning_rate,
+            ## when jointly training, we need to multiply the learning rate times the number of ensembles to make sure that the effective learning rate for each model stays the same.
+            weight_decay=self.hparams.weight_decay,
+            momentum=0.9,
+            nesterov=True,
+        )
+        total_steps = self.hparams.max_epochs * len(self.train_dataloader())
+        scheduler = self.setup_scheduler(optimizer, total_steps)
+        return [optimizer], [scheduler]
+
+    def setup_scheduler(self, optimizer, total_steps):
+        """Chooses between the cosine learning rate scheduler that came with the repo, or step scheduler based on wideresnet training.For the ensemble, we need to manually set the warmup and eta_min parameters to maintain the right scaling for individual models.
+        """
+        if self.hparams.scheduler in [None, "cosine"]:
+            scheduler = {
+                "scheduler": WarmupCosineLR(
+                    optimizer,
+                    warmup_epochs=total_steps * 0.3,
+                    max_epochs=total_steps,
+                    warmup_start_lr=1e-8,
+                    eta_min=1e-8
+                    # warmup_start_lr = 1e-8*len(self.models),
+                    # eta_min = 1e-8*len(self.models)
+                ),
+                "interval": "step",
+                "name": "learning_rate",
+            }
+        elif self.hparams.scheduler == "step":
+            scheduler = {
+                "scheduler": torch.optim.lr_scheduler.MultiStepLR(
+                    optimizer, milestones=[60, 120, 160], gamma=0.2, last_epoch=-1
+                ),
+                "interval": "epoch",
+                "frequency": 1,
+                "name": "learning_rate",
+            }
+        return scheduler
 
 
 class ClassasRegressionEnsembleModel(Regression_Models):
