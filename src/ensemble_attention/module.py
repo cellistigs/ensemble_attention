@@ -12,6 +12,7 @@ from .cifar10_models.efficientnet import efficientnet_b2,efficientnet_b1,efficie
 from .cifar10_models.wideresnet_28 import wideresnet28_10
 from .cifar10_models.vgg import vgg11_bn, vgg13_bn, vgg16_bn, vgg19_bn
 from .cifar10_models.rff import rff_regress_1000_wine,rff_regress_10000_wine,rff_regress_100000_wine,linreg_wine,rff_casregress_1000_mnist,rff_casregress_8000_mnist,rff_casregress_10000_mnist,rff_casregress_100000_mnist
+from .cifar10_models.shake_shake import shake_resnet26_2x96d,shake_resnet26_2x32d
 
 from .schduler import WarmupCosineLR
 from .layers import AttnComparison,PosEncodings,PosEncodingsSq,PosEncodingsSin
@@ -30,6 +31,8 @@ all_classifiers = {
     "resnet18": resnet18,
     "resnet34": resnet34,
     "resnet50": resnet50,
+    "shake_26_32": shake_resnet26_2x32d,
+    "shake_26_96": shake_resnet26_2x96d,
     "densenet121": densenet121,
     "densenet161": densenet161,
     "densenet169": densenet169,
