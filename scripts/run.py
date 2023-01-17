@@ -10,7 +10,8 @@ import numpy as np
 from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger, TensorBoardLogger
-from ensemble_attention.module import CIFAR10Module,CIFAR10EnsembleModule,CIFAR10AttentionEnsembleModule,CIFAR10AttentionEnsembleSkipModule,CIFAR10AttentionEnsembleMLPSkipModule,CIFAR10EnsembleDKLModule,CIFAR10EnsemblePAC2BModule,CIFAR10EnsembleJS_Unif_Module,CIFAR10EnsembleJS_Avg_Module,CIFAR10EnsembleDKL_Avg_Module,RegressionSingleModel, RegressionEnsembleModel, RegressionEnsemble_JGModel,ClassasRegressionSingleModel,ClassasRegressionEnsembleModel, ClassasRegressionEnsemble_JGModel
+from ensemble_attention.module import
+CIFAR10Module,CIFAR10EnsembleModule,CIFAR10AttentionEnsembleModule,CIFAR10AttentionEnsembleSkipModule,CIFAR10AttentionEnsembleMLPSkipModule,CIFAR10EnsembleDKLModule,CIFAR10EnsemblePAC2BModule,CIFAR10EnsembleJS_Unif_Module,CIFAR10EnsembleJS_Avg_Module,CIFAR10EnsembleDKL_Avg_Module,RegressionSingleModel,RegressionEnsembleModel,RegressionEnsemble_JGModel,ClassasRegressionSingleModel,ClassasRegressionEnsembleModel,ClassasRegressionEnsemble_JGModel,CIFAR100Module,CIFAR100EnsembleModule,CIFAR100EnsembleDKLModule,CIFAR100EnsemblePAC2BModule,CIFAR100EnsembleJS_Unif_Module,CIFAR100EnsembleJS_Avg_Module
 from ensemble_attention.callback import Check_GradNorm
 # from ensemble_attention.callback import Check_GradNorm
 from pytorch_lightning.plugins import ddp_plugin
@@ -34,7 +35,13 @@ modules = {"base":CIFAR10Module,
         "regress_ensemble_dkl":RegressionEnsemble_JGModel,
         "casregress":ClassasRegressionSingleModel,
         "casregress_ensemble":ClassasRegressionEnsembleModel,
-        "casregress_ensemble_dkl":ClassasRegressionEnsemble_JGModel
+        "casregress_ensemble_dkl":ClassasRegressionEnsemble_JGModel,
+        "base_100":CIFAR100Module,
+        "ensemble_100":CIFAR100EnsembleModule,  # train time ensemble
+        "ensemble_dkl_100":CIFAR100EnsembleDKLModule,  #jgap ensemble
+        "ensemble_p2b_100":CIFAR100EnsemblePAC2BModule,  # Ortega ensemble
+        "ensemble_js_unif_100":CIFAR100EnsembleJS_Unif_Module,  # co-training ensemble
+        "ensemble_js_avg_100":CIFAR100EnsembleJS_Avg_Module,  # Mishtal ensemble
         }
 
 script_dir = os.path.abspath(os.path.dirname(__file__))
