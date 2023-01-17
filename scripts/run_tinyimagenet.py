@@ -26,8 +26,8 @@ modules = {
         "ensemble":CIFAR10EnsembleModule,  # train time ensemble
         "ensemble_tinyimagenet":TinyImagenetEnsembleModule,  # train time ensemble
         #"ensemble_dkl":CIFAR10EnsembleDKLModule,  #jgap ensemble with kl divergence
-        "ensemble_jgap":CIFAR10EnsembleJGAPModule,  #jgap ensemble with jgap
-        "ensemble_jgap_tinyimagenet":TinyImagenetEnsembleJGAPModule,  #jgap ensemble with jgap
+        "ensemble_jgap":CIFAR10EnsembleJGAPModule,  #jgap ensemble with jgap with cifar10 models.
+        "ensemble_jgap_tinyimagenet":TinyImagenetEnsembleJGAPModule,  #jgap ensemble with imagenet models.
         #"ensemble_jgapl":CIFAR10EnsembleJGAPLModule,  #jgap ensemble with jgap w logit averaging.
         #"ensemble_p2b":CIFAR10EnsemblePAC2BModule,  # Ortega ensemble*
         #"ensemble_js_unif":CIFAR10EnsembleJS_Unif_Module,  # co-training ensemble*
