@@ -15,7 +15,7 @@ from ensemble_attention.callback import Check_GradNorm
 # from ensemble_attention.callback import Check_GradNorm
 from pytorch_lightning.plugins import ddp_plugin
 
-from cifar10_ood.data import CIFAR10Data,CIFAR10_1Data,CINIC10_Data,CIFAR10_CData
+from cifar10_ood.data import CIFAR10Data,CIFAR10_1Data,CINIC10_Data,CIFAR10_CData,CIFAR100Data
 from ensemble_attention.dataset import WineDataModule,MNISTModule
 
 
@@ -204,6 +204,8 @@ def main(args):
         ind_data = WineDataModule(args)
     elif args.test_set == "mnist":    
         ind_data = MNISTModule(args)
+    elif args.test_set == "CIFAR100":    
+        ind_data = CIFAR100Data(args)
 
     if args.ood_dataset == "cifar10_1":
         ood_data = CIFAR10_1Data(args,version =args.version)
@@ -217,6 +219,8 @@ def main(args):
         ood_data = WineDataModule(args)
     elif args.ood_dataset == "mnist":    
         ood_data = MNISTModule(args)
+    elif args.ood_dataset == "CIFAR100":    
+        ood_data = CIFAR100Data(args)
 
     ## do we train the model or not? 
     if bool(args.test_phase) or bool(args.random_eval):
@@ -252,6 +256,9 @@ def main(args):
     elif args.ood_dataset == "mnist":
         np.save("ood_mnist_{}_{}_preds".format(args.corruption,args.level),preds_ood)
         np.save("ood_mnist_{}_{}_labels".format(args.corruption,args.level),labels_ood)
+    elif args.ood_dataset == "CIFAR100":
+        np.save("ood_cifar100_{}_{}_preds".format(args.corruption,args.level),preds_ood)
+        np.save("ood_cifar100_{}_{}_labels".format(args.corruption,args.level),labels_ood)
     else:     
         raise Exception("option for ood dataset not recognized.")
     ## write metadata
