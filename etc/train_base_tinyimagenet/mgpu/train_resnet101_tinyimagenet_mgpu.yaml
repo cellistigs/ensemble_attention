@@ -1,4 +1,4 @@
-name: tinyimagenet_base_resnet34
+name: tinyimagenet_base_resnet101
 program: ../../../scripts/run_tinyimagenet.py
 method: grid
 
@@ -25,9 +25,9 @@ parameters:
   learning_rate:
     values: [1e-1, 1e-2, 1e-3]
   weight_decay:
-    values: [5e-4, 1e-4]
+    value: 5e-4
   classifier:
-    value: 'resnet34'
+    value: 'resnet101'
   batch_size:
     value: 256
 
