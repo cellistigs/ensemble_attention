@@ -28,6 +28,8 @@ parameters:
     values: [5e-4, 1e-4]
   classifier:
     value: 'resnet34'
+  batch_size:
+    value: 256
 
 command:
   - ${env}
