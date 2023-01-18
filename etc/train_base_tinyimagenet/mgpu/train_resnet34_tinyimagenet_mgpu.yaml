@@ -1,5 +1,5 @@
 name: tinyimagenet_base_resnet34
-program: ../../scripts/run.py
+program: ../../../scripts/run_tinyimagenet.py
 method: grid
 
 metric:
