@@ -24,14 +24,15 @@ config_name="run_default_gpu_tinyimagenet"
 num_workers=4
 fi
 
-max_epochs=100
+max_epochs=200
 logger="wandb"
 
 module="base"
-classifier="resnet50"
+classifier="resnet101"
 label_smoothing=0
 gamma=1.0
 seed=0
+batch_size=128
 
 for weight_decay in {0.0005,0.001};
 do
@@ -49,6 +50,7 @@ call_train "--config-name="${config_name}" \
   classifier=${classifier} \
   learning_rate=${learning_rate} \
   weight_decay=${weight_decay} \
+  batch_size=${batch_size} \
 
   "
 
