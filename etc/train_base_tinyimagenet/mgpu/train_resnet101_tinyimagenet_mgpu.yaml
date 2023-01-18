@@ -11,7 +11,7 @@ parameters:
   gamma:
     value: 1
   max_epochs:
-    value: 100
+    value: 150
   logger:
     value: 'wandb'
   num_workers:
@@ -23,7 +23,7 @@ parameters:
   gpus:
     value: 8
   learning_rate:
-    values: [1e-1, 1e-2, 1e-3]
+    values: [1e-1, 1e-2]
   weight_decay:
     value: 1e-4
   classifier:

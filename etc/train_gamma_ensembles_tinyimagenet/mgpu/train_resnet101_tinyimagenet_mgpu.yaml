@@ -30,6 +30,8 @@ parameters:
     value: 'resnet101'
   batch_size:
     value: 256
+  nb_models:
+    value: 3
 
 command:
   - ${env}
