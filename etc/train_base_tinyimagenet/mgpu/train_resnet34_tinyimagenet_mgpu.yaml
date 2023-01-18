@@ -34,5 +34,5 @@ command:
   - python
   - ${program}
   - "--config-name"
-  - "run_default_gpu"
+  - "run_default_gpu_tinyimagenet"
   - ${args_no_hyphens}
