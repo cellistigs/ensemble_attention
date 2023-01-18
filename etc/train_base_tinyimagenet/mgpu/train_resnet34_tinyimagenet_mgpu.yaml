@@ -9,7 +9,7 @@ parameters:
   data_dir:
     value: /home/ekellbuchanan/pytorch_datasets/tiny-imagenet-200
   gamma:
-    values: 1
+    value: 1
   max_epochs:
     value: 100
   logger:
