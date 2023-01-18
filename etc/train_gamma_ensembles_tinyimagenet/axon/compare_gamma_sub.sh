@@ -50,6 +50,7 @@ call_train "--config-name="${config_name}" \
   classifier=${classifier} \
 
   "
+  sleep 1m # sleep for 1 minute
 done
 done
 done
