@@ -16,6 +16,7 @@ from ensemble_attention.module import CIFAR10Module,CIFAR10EnsembleModule,\
     CIFAR10EnsembleDKL_Avg_Module, CIFAR10EnsembleJGAPModule, CIFAR10EnsembleJGAPLModule
 # from ensemble_attention.callback import Check_GradNorm
 from pytorch_lightning.plugins import ddp_plugin
+from omegaconf import DictConfig, OmegaConf
 
 from cifar10_ood.data import CIFAR10Data,CIFAR10_1Data,CINIC10_Data,CIFAR10_CData
 from ensemble_attention.data import TinyImagenetData
@@ -198,9 +199,12 @@ def main(args):
         elif args.module == "attention":    
             model = modules[args.module].load_from_checkpoint(checkpoint_path=args.checkpoint,hparams = args)
         ## Really should be the case for anything
-        else:    
-            model = modules[args.module].load_from_checkpoint(checkpoint_path=args.checkpoint,hparams = args)
-    else: ## if training from scratch or loading from state dict:    
+        else:
+            #model = modules[args.module].load_from_checkpoint(checkpoint_path=args.checkpoint,hparams = args)
+            ckpt = torch.load(args.checkpoint)
+            model = modules[args.module](**all_args)
+            model.load_state_dict(ckpt["state_dict"])
+    else: ## if training from scratch or loading from state dict:
         model = modules[args.module](**all_args)
         ## if loading from state dictionary instead of checkpoint: 
         """
