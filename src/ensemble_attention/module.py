@@ -34,7 +34,7 @@ all_classifiers = {
     "resnet18": resnet18,
     "resnet34": resnet34,
     "resnet50": resnet50,
-    "resnet101": resnet101
+    "resnet101": resnet101,
     "densenet121": densenet121,
     "densenet161": densenet161,
     "densenet169": densenet169,
