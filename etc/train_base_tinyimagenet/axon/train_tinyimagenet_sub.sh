@@ -33,10 +33,12 @@ label_smoothing=0
 gamma=1.0
 seed=0
 batch_size=128
+resnet_stride=2
+weight_decay=1e-2
 
-for weight_decay in {0.0005,0.001};
+for resnet_stride in 1 2;
 do
-for learning_rate in {0.001,0.01};
+for learning_rate in {0.01,0.03};
 do
 call_train "--config-name="${config_name}" \
   data_dir=${dataset_dir}  \
@@ -51,6 +53,7 @@ call_train "--config-name="${config_name}" \
   learning_rate=${learning_rate} \
   weight_decay=${weight_decay} \
   batch_size=${batch_size} \
+  resnet_stride=${resnet_stride} \
 
   "
 
