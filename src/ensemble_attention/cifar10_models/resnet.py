@@ -473,6 +473,7 @@ class ResNet(nn.Module):
         width_per_group=64,
         replace_stride_with_dilation=None,
         norm_layer=None,
+        resnet_stride=1,
     ):
         super(ResNet, self).__init__()
         if norm_layer is None:
@@ -495,7 +496,7 @@ class ResNet(nn.Module):
 
         # CIFAR10: kernel_size 7 -> 3, stride 2 -> 1, padding 3->1
         self.conv1 = nn.Conv2d(
-            3, self.inplanes, kernel_size=3, stride=1, padding=1, bias=False
+            3, self.inplanes, kernel_size=3, stride=resnet_stride, padding=1, bias=False
         )
         # END
 

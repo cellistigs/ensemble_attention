@@ -25,11 +25,13 @@ parameters:
   learning_rate:
     values: [1e-1, 1e-2]
   weight_decay:
-    value: 1e-4
+    value: [1e-4, 1e-2]
   classifier:
     value: 'resnet101'
   batch_size:
     value: 256
+  resnet_stride:
+    value: 2
 
 command:
   - ${env}
