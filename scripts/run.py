@@ -148,9 +148,9 @@ def main(args):
 
     ## Set up logging. 
     if args.logger == "wandb":
-        logger = WandbLogger(name=args.classifier, project="cifar10")
+        logger = WandbLogger(name=args.classifier, project=args.test_set)
     elif args.logger == "tensorboard":
-        logger = TensorBoardLogger("cifar10", name=args.classifier)
+        logger = TensorBoardLogger(args.test_set, name=args.classifier)
 
     ## Configure checkpoint and trainer: 
     checkpoint = ModelCheckpoint(monitor="acc/val", mode="max", save_last=False, dirpath = os.path.join(script_dir,"../","models",args.classifier,args.module,datetime.datetime.now().strftime("%m-%d-%y"),datetime.datetime.now().strftime("%H_%M_%S")))
