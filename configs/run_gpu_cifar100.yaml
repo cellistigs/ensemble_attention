@@ -1,5 +1,7 @@
-# Program arguments: 
-data_dir: /home/ubuntu/cifar10_ood/data/ 
+# Program arguments:
+# resnet18 this should be train/acc=100%, val/acc=74%
+# wide_resnet this should be train/acc=100%, val/acc~60%
+data_dir: /home/ubuntu/cifar10_ood/data/
 ood_dataset: CIFAR100  
 callbacks: 0 ## whether to use callbacks to debug. 
 random_eval: 0
@@ -15,6 +17,7 @@ checkpoint: null
 softmax: 1  
 nb_models: 4  
 module: ensemble
+num_classes: 100
 
 # Trainer arguments 
 classifier: resnet18_cifar100  
@@ -22,8 +25,9 @@ gamma: 1 ## weight of dkl argument.
 pretrained: 0 ## if we use pretrained models or not.
 pretrained-path: null ## path to pretrained model
 precision: 32  
-batch_size: 128 
-max_epochs: 100  
+batch_size: 128
+
+max_epochs: 160
 learning_rate: 1e-1
 weight_decay: 5e-4  
 test_set: "CIFAR100"  
