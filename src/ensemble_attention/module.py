@@ -569,6 +569,7 @@ class ClassasRegressionEnsembleJGAPModelOneHot(ClassasRegressionEnsembleModelOne
 
         self.traincriterion = MSELoss_classification(num_classes=self.num_classes)
         self.gamma = hparams.gamma
+        self.jgap_weight = (self.nb_models - 1)/self.nb_models
 
     def training_step(self, batch, batch_nb):
         """When we train, we want to train independently.
@@ -596,7 +597,7 @@ class ClassasRegressionEnsembleJGAPModelOneHot(ClassasRegressionEnsembleModelOne
         jgaploss = avg_sm_loss - mloss
 
         loss = (
-              mloss + self.gamma * jgaploss)  ## with gamma equal to 1, this is the same as the standard ensemble training loss (independent).
+              mloss + self.jgap_weight * self.gamma * jgaploss)  ## with gamma equal to 1, this is the same as the standard ensemble training loss (independent).
         accuracy = self.accuracy(logoutput.max(1)[1], labels)
 
         lr = self.trainer.lr_schedulers[0]["scheduler"].get_last_lr()[-1]
