@@ -462,7 +462,7 @@ class ClassasRegressionEnsembleModelOneHot(Regression_Models):
         self.num_classes = hparams.get('num_classes', 10)
         self.criterion = MSELoss_classification(num_classes=self.num_classes)
 
-        self.models = torch.nn.ModuleList([all_classifiers[self.hparams.classifier]() for i in range(
+        self.models = torch.nn.ModuleList([all_classifiers[self.hparams.classifier](num_classes=self.num_classes) for i in range(
             self.nb_models)])  ## now we add several different instances of the model.
         # del self.model
 
@@ -566,7 +566,6 @@ class ClassasRegressionEnsembleJGAPModelOneHot(ClassasRegressionEnsembleModelOne
 
     def __init__(self, hparams):
         super().__init__(hparams)
-
         self.traincriterion = MSELoss_classification(num_classes=self.num_classes)
         self.gamma = hparams.gamma
         self.jgap_weight = (self.nb_models - 1)/self.nb_models
