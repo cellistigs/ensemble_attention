@@ -14,10 +14,17 @@ from .cifar10_models.rff import rff_regress_1000_wine,rff_regress_10000_wine,rff
 from .cifar10_models.wideresnet import wideresnet28_20
 # ----------------
 # missing models in public codebase
-# from .cifar10_models.resnet_cifar import resnet8_cf
+from .cifar10_models.resnet_cifar import resnet8_cf
 #from .cifar10_models.efficientnet import efficientnet_b2,efficientnet_b1,efficientnet_b0
 #from .cifar10_models.rff import rff_casregress_8000_mnist
+#from .cifar100_models.vgg import vgg13_bn_cifar100
+#from .cifar100_models.densenet import densenet121_cifar100
+#from .cifar100_models.shake_shake import shake_resnet26_2x32d_cifar100
+
 # ----------------
+from .cifar10_models.shake_shake import shake_resnet26_2x96d,shake_resnet26_2x32d
+from .cifar100_models.resnet import resnet18_cifar100
+
 from .schduler import WarmupCosineLR
 from .layers import AttnComparison,PosEncodings,PosEncodingsSq,PosEncodingsSin
 from .metrics import Model_D_KL,Model_Ortega_Variance,Model_JS_Unif,Model_JS_Avg,Model_DKL_Avg,Regression_Var
@@ -35,6 +42,8 @@ all_classifiers = {
     "resnet34": resnet34,
     "resnet50": resnet50,
     "resnet101": resnet101,
+    "shake_26_32": shake_resnet26_2x32d,
+    "shake_26_96": shake_resnet26_2x96d,
     "densenet121": densenet121,
     "densenet161": densenet161,
     "densenet169": densenet169,
@@ -42,12 +51,16 @@ all_classifiers = {
     "googlenet": googlenet,
     "inception_v3": inception_v3,
     "lenet5": lenet5,
-    "wideresnet28_20" : wideresnet28_20
+    "wideresnet28_20" : wideresnet28_20,
     # missing from public codebase
-    #"resnet8_cifar": resnet8_cf,
+    "resnet8_cifar": resnet8_cf,
     #"efficientnet_b2": efficientnet_b2,
     #"efficientnet_b1":efficientnet_b1,
-    #"efficientnet_b0":efficientnet_b0
+    #"efficientnet_b0":efficientnet_b0,
+    "resnet18_cifar100": resnet18_cifar100,
+    #"vgg13_cifar100": vgg13_bn_cifar100,
+    #"densenet121_cifar100": densenet121_cifar100,
+    #"shake_26_32_cifar100": shake_resnet26_2x32d_cifar100
 }
 
 all_regressors = {
@@ -769,6 +782,57 @@ class ClassasRegressionEnsemble_JGModel(ClassasRegressionEnsembleModel):
         return scheduler    
 
 #####
+
+class CIFAR100_Models(pl.LightningModule):
+    """Abstract base class for CIFAR100 Models
+
+    """
+    def __init__(self,hparams):
+        super().__init__()
+        self.hparams = hparams
+    def forward(x):    
+        raise NotImplementedError
+    def training_step():
+        raise NotImplementedError
+
+    def calibration():
+        """Calculates binned calibration metrics given 
+
+        """
+
+    def validation_step(self, batch, batch_nb):
+        loss, accuracy = self.forward(batch)
+        self.log("loss/val", loss)
+        self.log("acc/val", accuracy)
+
+    def test_step(self, batch, batch_nb):
+        loss, accuracy = self.forward(batch)
+        self.log("acc/test", accuracy)
+
+    def setup_scheduler(self,optimizer,total_steps):
+        """Chooses between the cosine learning rate scheduler that came with the repo, or step scheduler based on wideresnet training. 
+
+        """
+        if self.hparams.scheduler in [None,"cosine"]: 
+            scheduler = {
+                "scheduler": WarmupCosineLR(
+                    optimizer, warmup_epochs=total_steps*0.3, max_epochs=total_steps
+                ),
+                "interval": "step",
+                "name": "learning_rate",
+            }
+        elif self.hparams.scheduler == "step":    
+            scheduler = {
+                "scheduler": torch.optim.lr_scheduler.MultiStepLR(
+                    optimizer, milestones = [60,120,160], gamma = 0.2, last_epoch=-1
+                ),
+                "interval": "epoch",
+                "frequency":1,
+                "name": "learning_rate",
+                }
+        return scheduler    
+
+################
 
 class CIFAR10_Models(pl.LightningModule):
     """Abstract base class for CIFAR10 Models
