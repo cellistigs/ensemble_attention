@@ -1,16 +1,16 @@
 #!/bin/bash
 
 # Train gamma ensemble models on cifar 10 for multiple values of gamma.
-#logger="wandb"
-logger="tensorboard"
+logger="wandb"
+#logger="tensorboard"
 #module="casregress_onehot"
 module="casregress_ensemble_jgap_onehot"
 seed=0
 classifier="wideresnet28_10"
-learning_rate=1e-1 #1e-2
+learning_rate=1e-2 #1e-2
 weight_decay=1e-2 #1e-2
-batch_size=64 #256
-max_epochs=2
+batch_size=120 #256
+max_epochs=50
 
 dataset_dir="${HOME}/pytorch_datasets/cifar10_ood/data"
 
