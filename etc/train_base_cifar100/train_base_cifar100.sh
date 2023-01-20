@@ -24,8 +24,8 @@ fi
 
 pretrained=0
 module="base"
-max_epochs=2
-classifier="wide_resnet28_10"
+max_epochs=160
+classifier="wideresnet28_10"
 resnet_stride=2
 learning_rate=1e-2
 weight_decay=1e-2
@@ -34,14 +34,14 @@ pushd ../../
 python scripts/run.py \
   --config-name="${config_name}" \
   data_dir=${dataset_dir}  \
-  max_epochs=${max_epochs} \
   logger=${logger} \
   num_workers=${num_workers} \
+  classifier=${classifier} \
+  module=${module} \
 
-  # module=${module} \
+#  max_epochs=${max_epochs} \
   # seed=${seed} \
   # pretrained=${pretrained} \
-  # classifier=${classifier} \
   # resnet_stride=${resnet_stride} \
   # learning_rate=%{learning_rate} \
 
