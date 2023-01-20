@@ -36,5 +36,5 @@ command:
   - python
   - ${program}
   - "--config-name"
-  - "run_default_gpu_tinyimagenet"
+  - "run_gpu_cifar100"
   - ${args_no_hyphens}
