@@ -408,7 +408,7 @@ class ClassasRegressionSingleModelOneHot(Regression_Models):
 
         self.acc = Accuracy()
         self.num_classes = hparams.get('num_classes', 10)
-        self.model = all_classifiers[self.hparams.classifier]()
+        self.model = all_classifiers[self.hparams.classifier](num_classes=self.num_classes)
         self.criterion = MSELoss_classification(num_classes=self.num_classes)
 
     def forward(self, batch):
