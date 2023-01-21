@@ -488,17 +488,18 @@ class Model_DKL_Avg(object):
 class Regression_Var(object):
     def __init__(self,cost_format):
         assert cost_format in ["torch","numpy"]
+        self.format = cost_format
     def var(self,preds):
         if self.format == "numpy":
             return self.var_numpy(preds)
         elif self.format == "torch":
             return self.var_torch(preds)
-    def var_numpy(preds):    
+    def var_numpy(self,preds):    
         preds_array = np.stack(preds,axis = 0)
         var = np.var(preds_array,axis = 0)
         return var
 
-    def var_torch(preds):
-        preds_array = np.stack(preds,axis = 0)
+    def var_torch(self,preds):
+        preds_array = torch.stack(preds,axis = 0)
         var = torch.var(preds_array,axis = 0, unbiased = False)
         return var
