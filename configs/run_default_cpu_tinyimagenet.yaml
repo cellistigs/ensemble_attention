@@ -1,7 +1,9 @@
-# Program arguments: 
-data_dir: /Users/taigaabe/Code/ 
-ood_dataset: cifar10_1  
-version: v4 
+# Program arguments:
+data_dir: /home/ekellbuch/pytorch_datasets/tiny-imagenet-200"
+ood_dataset:
+num_classes: 200
+
+version: v4
 level: null  
 corruption: null
 deterministic: 0
@@ -19,12 +21,12 @@ classifier: resnet18
 pretrained: 0  
 pretrained-path: null  
 precision: 32  
-batch_size: 256  
+batch_size: 8
 max_epochs: 100  
 gpu_id: null
 learning_rate: 1e-2  
 weight_decay: 1e-2  
-test_set: "CIFAR10"  
+test_set: "tiny-imagenet"
 lamb: 0.5  
 scheduler: cosine  
 
