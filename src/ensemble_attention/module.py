@@ -570,6 +570,16 @@ class ClassasRegressionEnsembleModelOneHot(Regression_Models):
                 "frequency": 1,
                 "name": "learning_rate",
             }
+        elif self.hparams.scheduler == "lambdalr":
+            scheduler = {
+                "scheduler": torch.optim.lr_scheduler.LambdaLR(optimizer,
+                                                          lambda epoch: 0.1 ** (epoch // 30)
+                ),
+                "interval": "epoch",
+                "frequency": 1,
+                "name": "learning_rate",
+                }
+
         return scheduler
 
 
