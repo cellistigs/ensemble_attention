@@ -207,7 +207,6 @@ def main(args):
     else: ## if training from scratch or loading from state dict:
         model = modules[args.module](**all_args)
         ## if loading from state dictionary instead of checkpoint: 
-        """
         if bool(args.pretrained):
             if args.pretrained_path is None:
                 state_dict = os.path.join(
@@ -217,7 +216,7 @@ def main(args):
             else:     
                 state_dict = args.pretrained_path
             model.model.load_state_dict(torch.load(state_dict))
-        """
+
     ## what dataset should we evaluate on?
     cifar10data = TinyImagenetData(args)
     # import pdb ; pdb.set_trace()
