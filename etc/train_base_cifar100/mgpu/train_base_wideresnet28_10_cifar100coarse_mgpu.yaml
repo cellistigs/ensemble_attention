@@ -1,0 +1,48 @@
+name: cifar100coarse_base_wideresnet28_10
+program: ../../../scripts/run.py
+method: grid
+
+metric:
+  name: loss/val
+  goal: minimize
+parameters:
+  data_dir:
+    value: /home/ekellbuchanan/pytorch_datasets/cifar-100-python
+  gamma:
+    value: 1
+  max_epochs:
+    value: 160
+  logger:
+    value: 'wandb'
+  num_workers:
+    value: 8
+  module:
+    value: 'base'
+  accelerator:
+    value: 'ddp'
+  gpus:
+    value: 8
+  learning_rate:
+    values: 1e-1
+  weight_decay:
+    value: 5e-4
+  classifier:
+    value: 'wideresnet28_10'
+  batch_size:
+    value: 256
+  num_classes:
+    value: 20
+  scheduler:
+    values: ['lambdalr', 'cosine']
+  test_set:
+    value: 'CIFAR100Coarse'
+  ood_dataset:
+    value: 'CIFAR100Coarse'
+
+command:
+  - ${env}
+  - python
+  - ${program}
+  - "--config-name"
+  - "run_gpu_cifar100"
+  - ${args_no_hyphens}
