@@ -11,13 +11,13 @@ parameters:
   gamma:
     value: 1
   max_epochs:
-    value: 160
+    value: 100
   logger:
     value: 'wandb'
   num_workers:
     value: 8
   module:
-    value: 'base'
+    value: 'casregress_onehot'
   accelerator:
     value: 'ddp'
   gpus:
@@ -33,7 +33,7 @@ parameters:
   num_classes:
     value: 20
   scheduler:
-    values: ['lambdalr', 'cosine']
+    value: 'lambdalr'
   test_set:
     value: 'CIFAR100Coarse'
   ood_dataset:

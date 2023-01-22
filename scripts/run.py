@@ -293,7 +293,10 @@ def main(args):
     elif args.ood_dataset == "CIFAR100":
         np.save("ood_cifar100_{}_{}_preds".format(args.corruption,args.level),preds_ood)
         np.save("ood_cifar100_{}_{}_labels".format(args.corruption,args.level),labels_ood)
-    else:     
+    elif args.ood_dataset == "CIFAR100Coarse":
+        np.save("ood_cifar100coarse_{}_{}_preds".format(args.corruption, args.level), preds_ood)
+        np.save("ood_cifar100coarse_{}_{}_labels".format(args.corruption, args.level), labels_ood)
+    else:
         raise Exception("option for ood dataset not recognized.")
     ## write metadata
     metadata = {}
