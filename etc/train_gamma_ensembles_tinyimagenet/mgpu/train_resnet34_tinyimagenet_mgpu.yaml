@@ -9,7 +9,7 @@ parameters:
   data_dir:
     value: /home/ekellbuchanan/pytorch_datasets/tiny-imagenet-200
   gamma:
-    values: [0.0, 0.5, 0.7, 1.0, 1.5, 2.0]
+    values: [1.0,0.5,1.5,0.0,0.7,2.0]
   max_epochs:
     value: 200
   logger:
@@ -23,15 +23,17 @@ parameters:
   gpus:
     value: 8
   learning_rate:
-    value: 1e-1
+    value: 1e-3
   weight_decay:
-    value: 1e-4
+    value: 1e-2
   classifier:
     value: 'resnet34'
   batch_size:
     value: 256
   nb_models:
     value: 3
+  resnet_stride:
+    value: 2
 
 command:
   - ${env}
