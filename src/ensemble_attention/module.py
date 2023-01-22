@@ -118,6 +118,16 @@ class Regression_Models(pl.LightningModule):
                 "frequency":1,
                 "name": "learning_rate",
                 }
+        elif self.hparams.scheduler == "lambdalr":
+            scheduler = {
+                "scheduler": torch.optim.lr_scheduler.LambdaLR(optimizer,
+                                                          lambda epoch: 0.1 ** (epoch // 30)
+                                                              ),
+                "interval": "epoch",
+                "frequency": 1,
+                "name": "learning_rate",
+                }
+
         return scheduler    
 #####regression
 
@@ -429,6 +439,10 @@ class ClassasRegressionSingleModelOneHot(Regression_Models):
         loss, acc = self.forward(batch)
         self.log("loss/train", loss)
         self.log("acc/train", acc)
+
+        lr = self.trainer.lr_schedulers[0]["scheduler"].get_last_lr()[-1]
+        self.log("lr/lr", lr)
+
         return loss
 
     def validation_step(self, batch, batch_nb):
@@ -881,7 +895,17 @@ class CIFAR10_Models(pl.LightningModule):
                 "frequency":1,
                 "name": "learning_rate",
                 }
-        return scheduler    
+        elif self.hparams.scheduler == "lambdalr":
+            scheduler = {
+                "scheduler": torch.optim.lr_scheduler.LambdaLR(optimizer,
+                                                          lambda epoch: 0.1 ** (epoch // 30)
+                ),
+                "interval": "epoch",
+                "frequency": 1,
+                "name": "learning_rate",
+                }
+
+        return scheduler
 
 class CIFAR10LinearGroupModule(CIFAR10_Models):
     """Replaces the final layer with a LogSoftmaxGroupLinear layer, and correspondingly changes the loss. 
@@ -970,6 +994,10 @@ class CIFAR10Module(CIFAR10_Models):
         loss, accuracy = self.forward(batch)
         self.log("loss/train", loss)
         self.log("acc/train", accuracy)
+
+        lr = self.trainer.lr_schedulers[0]["scheduler"].get_last_lr()[-1]
+        self.log("lr/lr",lr)
+
         return loss
 
     def validation_step(self, batch, batch_nb):
@@ -1110,6 +1138,16 @@ class CIFAR10EnsembleModule(CIFAR10_Models):
                 "frequency":1,
                 "name": "learning_rate",
                 }
+        elif self.hparams.scheduler == "lambdalr":
+            scheduler = {
+                "scheduler": torch.optim.lr_scheduler.LambdaLR(optimizer,
+                                                          lambda epoch: 0.1 ** (epoch // 30)
+                                                              ),
+                "interval": "epoch",
+                "frequency": 1,
+                "name": "learning_rate",
+                }
+
         return scheduler    
 
 class CIFAR10EnsembleDKLModule(CIFAR10EnsembleModule):
@@ -1291,6 +1329,16 @@ class CIFAR10EnsembleJGAPModule(CIFAR10EnsembleModule):
                 "frequency": 1,
                 "name": "learning_rate",
             }
+        elif self.hparams.scheduler == "lambdalr":
+            scheduler = {
+                "scheduler": torch.optim.lr_scheduler.LambdaLR(optimizer,
+                                                          lambda epoch: 0.1 ** (epoch // 30)
+                                                              ),
+                "interval": "epoch",
+                "frequency": 1,
+                "name": "learning_rate",
+                }
+
         return scheduler
 
 

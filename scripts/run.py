@@ -25,7 +25,7 @@ from ensemble_attention.module import CIFAR10Module,CIFAR10EnsembleModule,\
 #from ensemble_attention.callback import Check_GradNorm
 from pytorch_lightning.plugins import ddp_plugin
 
-from cifar10_ood.data import CIFAR10Data,CIFAR10_1Data,CINIC10_Data,CIFAR10_CData, CIFAR100Data
+from cifar10_ood.data import CIFAR10Data,CIFAR10_1Data,CINIC10_Data,CIFAR10_CData, CIFAR100Data, CIFAR100CoarseData
 from ensemble_attention.dataset import WineDataModule,MNISTModule
 
 
@@ -222,8 +222,8 @@ def main(args):
             else:     
                 state_dict = args.pretrained_path
             model.model.load_state_dict(torch.load(state_dict))
-            
-    ## what dataset should we evaluate on? 
+
+    ## what dataset should we evaluate on?
     if args.test_set == "CIFAR10":
         ind_data = CIFAR10Data(args)
     elif args.test_set == "wine":    
@@ -232,6 +232,10 @@ def main(args):
         ind_data = MNISTModule(args)
     elif args.test_set == "CIFAR100":    
         ind_data = CIFAR100Data(args)
+    elif args.test_set == "CIFAR100Coarse":
+        ind_data = CIFAR100CoarseData(args)
+    else:
+        raise ValueError("Unknown dataset")
 
     if args.ood_dataset == "cifar10_1":
         ood_data = CIFAR10_1Data(args,version =args.version)
@@ -247,6 +251,10 @@ def main(args):
         ood_data = MNISTModule(args)
     elif args.ood_dataset == "CIFAR100":    
         ood_data = CIFAR100Data(args)
+    elif args.ood_dataset == "CIFAR100Coarse":
+        ood_data = CIFAR100CoarseData(args)
+    else:
+        raise ValueError("Unknown dataset")
 
     ## do we train the model or not? 
     if bool(args.test_phase) or bool(args.random_eval):
@@ -254,7 +262,7 @@ def main(args):
     else:
         trainer.fit(model, ind_data)
 
-    ## testing and evaluation : 
+    ## testing and evaluation :
     data = {"in_dist_acc":None,"out_dist_acc":None}
     data["in_dist_acc"] = trainer.test(model, ind_data.test_dataloader())[0]["acc/test"]
     data["out_dist_acc"] = trainer.test(model, ood_data.test_dataloader())[0]["acc/test"]
