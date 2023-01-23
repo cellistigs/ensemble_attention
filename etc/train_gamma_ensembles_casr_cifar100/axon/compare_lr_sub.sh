@@ -34,6 +34,8 @@ batch_size=164 #256
 gamma=1
 seed=0
 scheduler="lambdalr"
+test_set="CIFAR100Coarse"
+num_classes=20
 
 for classifier in "resnet18"
 do
@@ -50,6 +52,9 @@ call_train "--config-name="${config_name}" \
   weight_decay=${weight_decay} \
   batch_size=${batch_size} \
   scheduler=${scheduler} \
+  test_set=${test_set} \
+  ood_dataset=${test_set} \
+  num_classes=${num_classes} \
 
   "
 done
