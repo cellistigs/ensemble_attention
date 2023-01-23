@@ -29,8 +29,10 @@ weight_decay: 5e-4
 test_set: "CIFAR100"  
 scheduler: step
 
-# gpu strategy
+auto_lr_find: 0
+
 num_workers: 8
+# gpu strategy
 gpus: 1
 accelerator: null 
 

@@ -1,8 +1,11 @@
-# Program arguments: 
-data_dir: /home/ubuntu/cifar10_ood/data/ 
-ood_dataset: CIFAR100  
+# Program arguments:
+# data arguments
+data_dir: /home/ekellbuch/pytorch_datasets/tiny-imagenet-200"
+ood_dataset:
+num_classes: 200
+test_set: "tiny-imagenet"
+
 callbacks: 0 ## whether to use callbacks to debug. 
-random_eval: 0
 version: v4 
 level: null  
 corruption: null
@@ -14,25 +17,31 @@ logger: "tensorboard"
 checkpoint: null  
 softmax: 1  
 nb_models: 4  
-module: ensemble
+module: base
+
 
 # Trainer arguments 
-classifier: resnet18_cifar100  
+classifier: resnet18  
+random_eval: 0
 gamma: 1 ## weight of dkl argument. 
 pretrained: 0 ## if we use pretrained models or not.
 pretrained-path: null ## path to pretrained model
-precision: 32  
-batch_size: 128 
+precision: 32
+batch_size: 100
 max_epochs: 100  
-learning_rate: 1e-1
-weight_decay: 5e-4  
-test_set: "CIFAR100"  
-scheduler: step
+learning_rate: 1e-3
+weight_decay: 1e-2  
+scheduler: cosine
 
-# gpu strategy
+auto_lr_find: 0
+
 num_workers: 8
+# gpu strategy
 gpus: 1
-accelerator: null 
+accelerator: "dp"
+gpu_id: "0"
+
+label_smoothing: 0
 
 # attention arguments for attention ensemble
 lamb: 0.5  #attention ensemble
