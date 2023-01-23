@@ -26,19 +26,16 @@ fi
 
 logger="wandb"
 max_epochs=100
-module="casregress_ensemble_jgap_onehot"
+module="casregress_onehot"
 classifier="wideresnet28_10"
 learning_rate=1e-1 #1e-2
-weight_decay=1e-2 #1e-2
-batch_size=100 #256
+weight_decay=1e-4 #1e-2
+batch_size=164 #256
 gamma=1
 seed=0
+scheduler="lambdalr"
 
-for classifier in "wideresnet28_10"
-do
-for weight_decay in {0.01,0.001,0.00001};
-do
-for learning_rate in {0.01,0.001,0.0001};
+for classifier in "resnet18"
 do
 call_train "--config-name="${config_name}" \
   data_dir=${dataset_dir}  \
@@ -52,8 +49,7 @@ call_train "--config-name="${config_name}" \
   learning_rate=${learning_rate} \
   weight_decay=${weight_decay} \
   batch_size=${batch_size} \
+  scheduler=${scheduler} \
 
   "
-done
-done
 done
