@@ -1,7 +1,8 @@
 # Program arguments: 
 data_dir: /home/ubuntu/cifar10_ood/data/ 
-ood_dataset: cifar10_1  
+ood_dataset: CIFAR100  
 callbacks: 0 ## whether to use callbacks to debug. 
+random_eval: 0
 version: v4 
 level: null  
 corruption: null
@@ -16,22 +17,22 @@ nb_models: 4
 module: ensemble  
 
 # Trainer arguments 
-classifier: vgg11_bn  
+classifier: resnet18_cifar100  
 gamma: 1 ## weight of dkl argument. 
 pretrained: 0 ## if we use pretrained models or not.
 pretrained-path: null ## path to pretrained model
 precision: 32  
-batch_size: 256  
-max_epochs: 100  
-learning_rate: 1e-2
-weight_decay: 1e-2  
-test_set: "CIFAR10"  
-scheduler: cosine
+batch_size: 128  
+max_epochs: 160  
+learning_rate: 1e-1
+weight_decay: 5e-4  
+test_set: "CIFAR100"  
+scheduler: step
 
 # gpu strategy
 num_workers: 8
 gpus: 1
-accelerator: "ddp"
+accelerator: null 
 
 # attention arguments for attention ensemble
 lamb: 0.5  #attention ensemble
