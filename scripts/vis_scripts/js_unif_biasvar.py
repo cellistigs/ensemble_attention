@@ -15,7 +15,7 @@ results_dir = os.path.join(os.path.dirname(os.path.dirname(script_dir)),"results
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 datasets = {"cifar10":CIFAR10Data,"cifar10.1":CIFAR10_1Data,"cinic10":CINIC10_Data}
 
-resultpaths = {
+resultdict = {
         -0.2:"multirun/2022-11-02/15-08-18/0",
         -0.4:"multirun/2022-11-02/15-08-18/1",
         -0.6:"multirun/2022-11-02/15-08-18/2",
@@ -39,7 +39,7 @@ def get_resultspaths(resultpaths):
     """
     dict_to_return = {}
     for gamma,path in resultpaths.items():
-        dict_to_return[os.path.join(script_dir,path)] = gamma
+        dict_to_return[os.path.join(script_dir,"../",path)] = gamma
     return dict_to_return 
 
 
@@ -96,17 +96,17 @@ def eval_model(model,device,args,dataset_name = "cifar10"):
 @hydra.main(config_path=os.path.join(script_dir,"../../configs/"),config_name="run_default_gpu")
 def main(args):
     modeltype = "resnet18"
-    resultspaths= get_resultspaths(modeltype)
+    resultspaths= get_resultspaths(resultdict)
     print("gammas: {}".format(resultspaths))
     for resultspath,gamma in resultspaths.items():
         print("creating labels for: {}, gamma = {}".format(modeltype, gamma))
         modelpath = get_modelpath(resultspath)
         model = get_model(modelpath,args)
         outputs = eval_model(model,device,args)
-        labelpath = os.path.join(results_dir,"js_unif_indiv","ensemble_js_unif_model_{}_{}_ind_{}".format(gamma,modeltype,"labels"))
+        labelpath = os.path.join(results_dir,"js_unif_indiv_true","ensemble_js_unif_model_{}_{}_ind_{}".format(gamma,modeltype,"labels"))
         np.save(labelpath,outputs[1].to("cpu"))
         for i in range(len(outputs[0])):
-            path = os.path.join(results_dir,"js_unif_indiv","ensemble_js_unif_model_{}_{}_{}_ind_{}".format(i,gamma,modeltype,"preds"))
+            path = os.path.join(results_dir,"js_unif_indiv_true","ensemble_js_unif_model_{}_{}_{}_ind_{}".format(i,gamma,modeltype,"preds"))
             np.save(path,outputs[0][i])
 
 if __name__ == "__main__":
