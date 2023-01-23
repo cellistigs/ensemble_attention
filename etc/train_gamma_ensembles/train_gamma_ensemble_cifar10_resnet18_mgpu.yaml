@@ -1,0 +1,40 @@
+name: gamma_ensemble_resnet_18
+program: ../../scripts/run.py
+method: grid
+
+metric:
+  name: loss/val
+  goal: minimize
+parameters:
+  data_dir:
+    value: /home/ekellbuch/pytorch_datasets/cifar10_ood/data
+  gamma:
+    values: 1
+  max_epochs:
+    value: 100
+  logger:
+    value: 'wandb'
+  num_workers:
+    value: 8
+  module:
+    value: 'base'
+  accelerator:
+    value: 'ddp'
+  gpus:
+    value: 2
+  learning_rate:
+    value: 0.03
+  weight_decay:
+    value: 5e-4
+# auto_lr_find:
+#    value: 0
+# gpu_id:
+#   value: "0"
+
+command:
+  - ${env}
+  - python
+  - ${program}
+  - "--config-name"
+  - "run_default_gpu"
+  - ${args_no_hyphens}

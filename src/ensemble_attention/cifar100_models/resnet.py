@@ -467,7 +467,7 @@ class ResNet(nn.Module):
         self,
         block,
         layers,
-        num_classes=10,
+        num_classes=100,
         zero_init_residual=False,
         groups=1,
         width_per_group=64,
@@ -901,7 +901,7 @@ def _resnet(arch, block, layers, pretrained, progress, device, **kwargs):
     return model
 
 def _resnet_regress(arch, block, layers, pretrained, progress, device, **kwargs):
-    model = ResNet(block,num_classes=1,layers, **kwargs)
+    model = ResNet(block,layers,num_classes=1, **kwargs)
     if pretrained:
         script_dir = os.path.dirname(__file__)
         state_dict = torch.load(
@@ -963,61 +963,14 @@ def wideresnet18_4_grouplinear(pretrained=False, progress=True, device="cpu", **
         "wideresnet18", BasicBlock, [2, 2, 2, 2], pretrained, progress, device, k = 4, **kwargs
     )
 
-def wideresnet18_4(pretrained=False, progress=True, device="cpu", **kwargs):
-    """Constructs a wide (4x) ResNet-18 model.
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
-    """
-    return _wideresnet(
-        "wideresnet18", BasicBlock, [2, 2, 2, 2], pretrained, progress, device, k = 4, **kwargs
-    )
 
-def wideresnet18(pretrained=False, progress=True, device="cpu", **kwargs):
-    """Constructs a wide (2x) ResNet-18 model.
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
-    """
-    return _wideresnet(
-        "wideresnet18", BasicBlock, [2, 2, 2, 2], pretrained, progress, device, k = 2, **kwargs
-    )
-
-def resnet18(pretrained=False, progress=True, device="cpu", **kwargs):
-    """Constructs a ResNet-18 model.
+def resnet18_cifar100(pretrained=False, progress=True, device="cpu", **kwargs):
+    """Constructs a ResNet-18 model for cifar100.
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
     return _resnet(
-        "resnet18", BasicBlock, [2, 2, 2, 2], pretrained, progress, device, **kwargs
+        "resnet18_cifar100", BasicBlock, [2, 2, 2, 2], pretrained, progress, device,**kwargs
     )
 
-
-def resnet34(pretrained=False, progress=True, device="cpu", **kwargs):
-    """Constructs a ResNet-34 model.
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
-    """
-    return _resnet(
-        "resnet34", BasicBlock, [3, 4, 6, 3], pretrained, progress, device, **kwargs
-    )
-
-
-def resnet50(pretrained=False, progress=True, device="cpu", **kwargs):
-    """Constructs a ResNet-50 model.
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
-    """
-    return _resnet(
-        "resnet50", Bottleneck, [3, 4, 6, 3], pretrained, progress, device, **kwargs
-    )
- 
-def resnet18_regression(pretrained=False,progress=True,device = "cpu",**kwargs):
-    """Constructs a ResNet-18 for regression
-
-    """
-    return _resnet_regress(
-        "resnet18_regress", BasicBlock, [2, 2, 2, 2], pretrained, progress, device, **kwargs)
