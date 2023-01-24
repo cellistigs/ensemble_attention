@@ -17,20 +17,22 @@ nb_models: 4
 module: ensemble  
 
 # Trainer arguments 
-classifier: shake_26_32_cifar100  
+classifier: resnet18_cifar100  
 gamma: 1 ## weight of dkl argument. 
 pretrained: 0 ## if we use pretrained models or not.
 pretrained-path: null ## path to pretrained model
 precision: 32  
-batch_size: 256  
-max_epochs: 100  
-learning_rate: 1e-2
-weight_decay: 1e-2  
+batch_size: 128  
+max_epochs: 160  
+learning_rate: 1e-1
+weight_decay: 5e-4  
 test_set: "CIFAR100"  
-scheduler: cosine
+scheduler: step
 
-# gpu strategy
+auto_lr_find: 0
+
 num_workers: 8
+# gpu strategy
 gpus: 1
 accelerator: null 
 
