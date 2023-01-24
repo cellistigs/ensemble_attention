@@ -1,4 +1,4 @@
-name: cifar100coarse_base_wideresnet28_10
+name: gamma_ensemble_resnet_18
 program: ../../../scripts/run.py
 method: grid
 
@@ -7,9 +7,9 @@ metric:
   goal: minimize
 parameters:
   data_dir:
-    value: /home/ekellbuchanan/pytorch_datasets/cifar-100-python
+    value: /home/ekellbuchanan/pytorch_datasets/cifar10_ood/data
   gamma:
-    values: [0.5, 1.5, 0.7, 1.2, 0.2, 1.8, 0.0, 2.0]
+    values: [1]
   max_epochs:
     value: 100
   logger:
@@ -23,26 +23,24 @@ parameters:
   gpus:
     value: 8
   learning_rate:
-    value: 1e-1
+    value: 1e-2
   weight_decay:
-    value: 5e-4
-  classifier:
-    value: 'wideresnet28_10'
+    value: 1e-2
   batch_size:
     value: 256
-  num_classes:
-    value: 20
+  classifier:
+    value: "densenet161"
   scheduler:
-    value: 'lambdalr'
-  test_set:
-    value: 'CIFAR100Coarse'
-  ood_dataset:
-    value: 'CIFAR100Coarse'
+    value: "cosine"
+# auto_lr_find:
+#    value: 0
+# gpu_id:
+#   value: "0"
 
 command:
   - ${env}
   - python
   - ${program}
   - "--config-name"
-  - "run_gpu_cifar100"
+  - "run_default_gpu"
   - ${args_no_hyphens}
