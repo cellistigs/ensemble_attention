@@ -61,7 +61,7 @@ modules = {"base":CIFAR10Module,
 script_dir = os.path.abspath(os.path.dirname(__file__))
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def traindata_eval(model,ind_data,device,softmax = True):   
+def traindata_eval(model,ind_data,device,softmax = True, store_split = False):
     """Custom evaluation function to output logits as arrays from models given the trained model on the training data. Used to generate training examples from random labels. 
 
     :param model: a model from interpensembles.modules. Should have a method "calibration" that outputs predictions (logits) and labels given images and labels. 
@@ -81,7 +81,7 @@ def traindata_eval(model,ind_data,device,softmax = True):
         for idx,batch in tqdm(enumerate(ind_data.train_dataloader(shuffle=False,aug=False))):
             ims = batch[0].to(device)
             labels = batch[1].to(device)
-            pred,label = model.calibration((ims,labels))
+            pred, label = model.calibration((ims,labels),store_split = True)
             ## to cpu
             predarray = pred.cpu().numpy() ## 256x10
             labelarray = label.cpu().numpy() ## 
@@ -92,7 +92,7 @@ def traindata_eval(model,ind_data,device,softmax = True):
     all_labels_array = np.concatenate(all_labels,axis = 0)
     return all_preds_array,all_labels_array
 
-def custom_eval(model,ind_data,ood_data,device,softmax = True):   
+def custom_eval(model,ind_data,ood_data,device,softmax = True, store_split=False):
     """Custom evaluation function to output logits as arrays from models given the trained model, in distribution data and out of distribution data. 
 
     :param model: a model from interpensembles.modules. Should have a method "calibration" that outputs predictions (logits) and labels given images and labels. 
@@ -115,7 +115,7 @@ def custom_eval(model,ind_data,ood_data,device,softmax = True):
         for idx,batch in tqdm(enumerate(ind_data.test_dataloader())):
             ims = batch[0].to(device)
             labels = batch[1].to(device)
-            pred,label = model.calibration((ims,labels))
+            pred, label = model.calibration((ims, labels), store_split=store_split)
             ## to cpu
             predarray = pred.cpu().numpy() ## 256x10
             labelarray = label.cpu().numpy() ## 
@@ -124,7 +124,7 @@ def custom_eval(model,ind_data,ood_data,device,softmax = True):
         for idx,batch in tqdm(enumerate(ood_data.test_dataloader())):
             ims = batch[0].to(device)
             labels = batch[1].to(device)
-            pred,label = model.calibration((ims,labels))
+            pred,label = model.calibration((ims,labels), store_split=store_split)
             ## to cpu
             predarray = pred.cpu().numpy() ## 256x10
             labelarray = label.cpu().numpy() ## 
@@ -166,6 +166,7 @@ def main(args):
         "checkpoint_callback":checkpoint,
         "precision":args.precision,
         "auto_lr_find": bool(args.get('auto_lr_find', 0)),
+        "gradient_clip_val": args.get('gradient_clip_val', 0),
         }
 
     if torch.cuda.is_available():
@@ -267,8 +268,9 @@ def main(args):
     data["in_dist_acc"] = trainer.test(model, ind_data.test_dataloader())[0]["acc/test"]
     data["out_dist_acc"] = trainer.test(model, ood_data.test_dataloader())[0]["acc/test"]
 
-    preds_ind, labels_ind, preds_ood, labels_ood = custom_eval(model,ind_data,ood_data,device,softmax = bool(args.softmax))
-    preds_train,labels_train = traindata_eval(model,ind_data,device,softmax = bool(args.softmax))
+    store_split = args.get('store_split', False)
+    preds_ind, labels_ind, preds_ood, labels_ood = custom_eval(model,ind_data,ood_data,device,softmax = bool(args.softmax), store_split=store_split)
+    preds_train,labels_train = traindata_eval(model,ind_data,device,softmax = bool(args.softmax), store_split=store_split)
 
     full_path = "." #os.path.join(results_dir,"robust_results{}_{}_{}".format(datetime.datetime.now().strftime("%m-%d-%y_%H:%M.%S"),args.module,args.classifier))
     np.save("ind_preds",preds_ind)

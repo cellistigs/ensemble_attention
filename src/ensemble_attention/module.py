@@ -428,7 +428,7 @@ class ClassasRegressionSingleModelOneHot(Regression_Models):
         acc = self.acc(predictions.max(1)[1], labels)
         return loss, acc*100
 
-    def calibration(self,batch,use_softmax = False):
+    def calibration(self,batch,use_softmax = False, store_split=False):
         """Like forward, but just exit with the softmax predictions and labels. .
         """
         images, labels = batch
@@ -497,7 +497,7 @@ class ClassasRegressionEnsembleModelOneHot(Regression_Models):
         accuracy = self.accuracy(mean.max(1)[1], labels)
         return tloss, accuracy*100
 
-    def calibration(self, batch):
+    def calibration(self, batch, store_split=False):
         """Like forward, but just exit with the predictions and labels. .
         """
         images, labels = batch
@@ -507,8 +507,12 @@ class ClassasRegressionEnsembleModelOneHot(Regression_Models):
             predictions = m(images)
             all_predictions.append(predictions)
         # gmean = torch.exp(torch.mean(torch.log(torch.stack(softmaxes)),dim = 0)) ## implementation from https://stackoverflow.com/questions/59722983/how-to-calculate-geometric-mean-in-a-differentiable-way
-        mean = torch.mean(torch.stack(all_predictions), dim=0)
+        if store_split:
+            mean = torch.stack(all_predictions, 1)
+        else:
+            mean = torch.mean(torch.stack(all_predictions), dim=0)
         return mean, labels
+
 
     def training_step(self, batch, batch_nb):
         """When we train, we want to train independently.

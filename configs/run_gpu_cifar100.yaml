@@ -18,6 +18,7 @@ softmax: 1
 nb_models: 4  
 module: ensemble
 num_classes: 100
+gradient_clip_val: 0
 
 # Trainer arguments 
 classifier: resnet18_cifar100  
@@ -42,3 +43,6 @@ accelerator: null
 lamb: 0.5  #attention ensemble
 embedding_dim: 25 ## attention embedding
 start_attention: 10 ## epoch on which to start attentio
+
+# store individual model arguments
+store_split: 0

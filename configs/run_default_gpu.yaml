@@ -30,6 +30,7 @@ weight_decay: 1e-2
 test_set: "CIFAR10"  
 scheduler: cosine
 auto_lr_find: 0
+gradient_clip_val: 0
 
 num_workers: 8
 # gpu strategy
@@ -38,6 +39,9 @@ accelerator: "dp"
 gpu_id: "0"
 
 label_smoothing: 0
+
+# store arguments
+store_split: 0
 
 # attention arguments for attention ensemble
 lamb: 0.5  #attention ensemble
