@@ -9,9 +9,9 @@ parameters:
   data_dir:
     value: /home/ekellbuchanan/pytorch_datasets/cifar10_ood/data
   gamma:
-    values: [1]
+    values: [0]
   max_epochs:
-    value: 100
+    value: 150
   logger:
     value: 'wandb'
   num_workers:
@@ -33,7 +33,7 @@ parameters:
   scheduler:
     value: "lambdalr"
   gradient_clip_val:
-    value: 0.5
+    value: 0
 # auto_lr_find:
 #    value: 0
 # gpu_id:
