@@ -1,4 +1,4 @@
-name: gamma_ensemble_resnet_18
+name: gamma_ensemble_densenet161
 program: ../../../scripts/run.py
 method: grid
 
@@ -31,7 +31,9 @@ parameters:
   classifier:
     value: "densenet161"
   scheduler:
-    value: "cosine"
+    value: "lambdalr"
+  gradient_clip_val:
+    value: 0.5
 # auto_lr_find:
 #    value: 0
 # gpu_id:
