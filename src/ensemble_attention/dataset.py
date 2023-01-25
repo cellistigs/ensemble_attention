@@ -104,3 +104,25 @@ class MNISTModule(pl.LightningDataModule):
             pin_memory=True,)
     def test_dataloader(self):
         return self.val_dataloader()
+
+class MNISTModule_class(pl.LightningDataModule):
+    def __init__(self,args):
+        super().__init__()
+        self.hparams = args
+        self.mnist_predict = MNIST(self.hparams.data_dir,train = False,transform=ToTensor(),download = True)
+        self.mnist_train = MNIST(self.hparams.data_dir,train = True,transform =ToTensor(),download =True)
+    def train_dataloader(self,shuffle = False,aug = False):
+        return DataLoader(self.mnist_train,
+            batch_size=self.hparams.batch_size,
+            num_workers=self.hparams.num_workers,
+            drop_last=False,
+            pin_memory=True,
+            shuffle = shuffle)
+    def val_dataloader(self):
+        return DataLoader(self.mnist_predict,
+            batch_size=self.hparams.batch_size,
+            num_workers=self.hparams.num_workers,
+            drop_last=False,
+            pin_memory=True,)
+    def test_dataloader(self):
+        return self.val_dataloader()

@@ -11,7 +11,7 @@ from .cifar10_models.resnet import resnet18, resnet34, resnet50, wideresnet18, w
 from .cifar10_models.efficientnet import efficientnet_b2,efficientnet_b1,efficientnet_b0
 from .cifar10_models.wideresnet_28 import wideresnet28_10
 from .cifar10_models.vgg import vgg11_bn, vgg13_bn, vgg16_bn, vgg19_bn
-from .cifar10_models.rff import rff_regress_1000_wine,rff_regress_10000_wine,rff_regress_100000_wine,linreg_wine,rff_casregress_1000_mnist,rff_casregress_8000_mnist,rff_casregress_10000_mnist,rff_casregress_100000_mnist
+from .cifar10_models.rff import rff_regress_1000_wine,rff_regress_10000_wine,rff_regress_100000_wine,linreg_wine,rff_casregress_1000_mnist,rff_casregress_8000_mnist,rff_casregress_10000_mnist,rff_casregress_100000_mnist,rff_100_mnist,rff_10000_mnist,rff_100000_mnist
 from .cifar10_models.shake_shake import shake_resnet26_2x96d,shake_resnet26_2x32d
 from .cifar100_models.resnet import resnet18_cifar100
 from .cifar100_models.vgg import vgg13_bn_cifar100
@@ -49,7 +49,10 @@ all_classifiers = {
     "resnet18_cifar100": resnet18_cifar100,
     "vgg13_cifar100": vgg13_bn_cifar100,
     "densenet121_cifar100": densenet121_cifar100,
-    "shake_26_32_cifar100": shake_resnet26_2x32d_cifar100
+    "shake_26_32_cifar100": shake_resnet26_2x32d_cifar100,
+    "rff_100":rff_100_mnist,
+    "rff_10000":rff_10000_mnist,
+    "rff_100000":rff_100000_mnist
 }
 
 all_regressors = {
