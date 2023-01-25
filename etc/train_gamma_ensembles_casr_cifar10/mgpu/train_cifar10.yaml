@@ -25,7 +25,7 @@ parameters:
   learning_rate:
     value: 1e-2
   weight_decay:
-    value: 1e-2
+    value: 1e-5
   batch_size:
     value: 256
   classifier:
@@ -34,6 +34,8 @@ parameters:
     value: "lambdalr"
   gradient_clip_val:
     value: 0
+  callbacks:
+    value: 1
 # auto_lr_find:
 #    value: 0
 # gpu_id:
