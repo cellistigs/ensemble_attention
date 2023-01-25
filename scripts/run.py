@@ -23,6 +23,7 @@ from ensemble_attention.module import CIFAR10Module,CIFAR10EnsembleModule,\
 #    CIFAR100EnsemblePAC2BModule,CIFAR100EnsembleJS_Unif_Module,CIFAR100EnsembleJS_Avg_Module
 
 #from ensemble_attention.callback import Check_GradNorm
+from ensemble_attention.callback import GradNormCallbackSplit, GradNormCallback
 from pytorch_lightning.plugins import ddp_plugin
 
 from cifar10_ood.data import CIFAR10Data,CIFAR10_1Data,CINIC10_Data,CIFAR10_CData, CIFAR100Data, CIFAR100CoarseData
@@ -183,7 +184,8 @@ def main(args):
             trainerargs['plugins'] = [ddp_plugin.DDPPlugin(find_unused_parameters=False)]
 
     if args.callbacks:
-        trainer = Trainer(**trainerargs,callbacks = [Check_GradNorm()])
+       #trainer = Trainer(**trainerargs,callbacks = [Check_GradNorm()])
+        trainer = Trainer(**trainerargs,callbacks = [GradNormCallbackSplit()])
     else:
         trainer = Trainer(**trainerargs)
 
