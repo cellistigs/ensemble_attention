@@ -596,7 +596,7 @@ class ClassasRegressionEnsembleJGAPModelOneHot(ClassasRegressionEnsembleModelOne
         super().__init__(hparams)
         self.traincriterion = MSELoss_classification(num_classes=self.num_classes)
         self.gamma = hparams.gamma
-        self.jgap_weight = (self.nb_models - 1)/self.nb_models
+        self.jgap_weight = 1 # (self.nb_models - 1)/self.nb_models
 
     def training_step(self, batch, batch_nb):
         """When we train, we want to train independently.
