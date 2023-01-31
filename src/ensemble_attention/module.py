@@ -1074,7 +1074,7 @@ class CIFAR10EnsembleModule(CIFAR10_Models):
         accuracy = self.accuracy(mean,labels)
         return tloss,accuracy*100
 
-    def calibration(self,batch):
+    def calibration(self,batch, store_split=False):
         """Like forward, but just exit with the predictions and labels. . 
         """
         images, labels = batch
@@ -1088,7 +1088,10 @@ class CIFAR10EnsembleModule(CIFAR10_Models):
             normed = softmax(predictions)
             softmaxes.append(normed)
         #gmean = torch.exp(torch.mean(torch.log(torch.stack(softmaxes)),dim = 0)) ## implementation from https://stackoverflow.com/questions/59722983/how-to-calculate-geometric-mean-in-a-differentiable-way   
-        mean = torch.mean(torch.stack(softmaxes),dim = 0) 
+        if store_split:
+            mean = torch.stack(softmaxes, 1)
+        else:
+            mean = torch.mean(torch.stack(softmaxes),dim = 0)
         return mean,labels
 
     def training_step(self, batch, batch_nb):
