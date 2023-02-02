@@ -17,11 +17,11 @@ ml load anaconda3-2019.03;
 source activate interp
 #. activate interp
 
-echo "Begin call: scrips/run_tinyimagenet.py $1"
+echo "Begin call: scrips/run.py $1"
 #pushd ../../../
 #python  scripts/run.py $1
-python /home/ekb2154/data/libraries/ensemble_attention/scripts/run_tinyimagenet.py $1
-echo "Ran scrips/run_tinyimagenet.py $1"
+python /home/ekb2154/data/libraries/ensemble_attention/scripts/run.py $1
+echo "Ran scrips/run.py $1"
 
 source deactivate
 #popd

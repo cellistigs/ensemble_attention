@@ -10,12 +10,23 @@ import numpy as np
 from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger, TensorBoardLogger
-from ensemble_attention.module import CIFAR10Module,CIFAR10EnsembleModule,CIFAR10AttentionEnsembleModule,CIFAR10AttentionEnsembleSkipModule,CIFAR10AttentionEnsembleMLPSkipModule,CIFAR10EnsembleDKLModule,CIFAR10EnsemblePAC2BModule,CIFAR10EnsembleJS_Unif_Module,CIFAR10EnsembleJS_Avg_Module, CIFAR10EnsembleDKL_Avg_Module, CIFAR10EnsembleJGAPModule, CIFAR10EnsembleJGAPLModule, RegressionSingleModel,RegressionEnsembleModel,RegressionEnsemble_JGModel,ClassasRegressionSingleModel,ClassasRegressionEnsembleModel,ClassasRegressionEnsemble_JGModel
 
-from ensemble_attention.callback import Check_GradNorm
+from ensemble_attention.module import CIFAR10Module,CIFAR10EnsembleModule,\
+    CIFAR10AttentionEnsembleModule,CIFAR10AttentionEnsembleSkipModule,CIFAR10AttentionEnsembleMLPSkipModule,\
+    CIFAR10EnsembleDKLModule,CIFAR10EnsemblePAC2BModule,CIFAR10EnsembleJS_Unif_Module,CIFAR10EnsembleJS_Avg_Module, \
+    CIFAR10EnsembleDKL_Avg_Module, CIFAR10EnsembleJGAPModule, CIFAR10EnsembleJGAPLModule, \
+    RegressionSingleModel, RegressionEnsembleModel, RegressionEnsemble_JGModel, \
+    ClassasRegressionSingleModel,ClassasRegressionEnsembleModel, ClassasRegressionEnsemble_JGModel, \
+    ClassasRegressionSingleModelOneHot, ClassasRegressionEnsembleModelOneHot, ClassasRegressionEnsembleJGAPModelOneHot
+
+#from ensemble_attention.module import CIFAR100Module,CIFAR100EnsembleModule,CIFAR100EnsembleDKLModule, \
+#    CIFAR100EnsemblePAC2BModule,CIFAR100EnsembleJS_Unif_Module,CIFAR100EnsembleJS_Avg_Module
+
+#from ensemble_attention.callback import Check_GradNorm
+from ensemble_attention.callback import GradNormCallbackSplit, GradNormCallback
 from pytorch_lightning.plugins import ddp_plugin
 
-from cifar10_ood.data import CIFAR10Data,CIFAR10_1Data,CINIC10_Data,CIFAR10_CData,CIFAR100Data
+from cifar10_ood.data import CIFAR10Data,CIFAR10_1Data,CINIC10_Data,CIFAR10_CData, CIFAR100Data, CIFAR100CoarseData
 from ensemble_attention.dataset import WineDataModule,MNISTModule
 
 
@@ -36,19 +47,22 @@ modules = {"base":CIFAR10Module,
         "regress_ensemble_dkl":RegressionEnsemble_JGModel,
         "casregress":ClassasRegressionSingleModel,
         "casregress_ensemble":ClassasRegressionEnsembleModel,
-        "casregress_ensemble_dkl":ClassasRegressionEnsemble_JGModel,}
+        "casregress_ensemble_dkl":ClassasRegressionEnsemble_JGModel,
+        "casregress_onehot":ClassasRegressionSingleModelOneHot,
+        "casregress_ensemble_onehot":ClassasRegressionEnsembleModelOneHot,
+        "casregress_ensemble_jgap_onehot":ClassasRegressionEnsembleJGAPModelOneHot,
         #"base_100":CIFAR100Module,
         #"ensemble_100":CIFAR100EnsembleModule,  # train time ensemble
         #"ensemble_dkl_100":CIFAR100EnsembleDKLModule,  #jgap ensemble
         #"ensemble_p2b_100":CIFAR100EnsemblePAC2BModule,  # Ortega ensemble
         #"ensemble_js_unif_100":CIFAR100EnsembleJS_Unif_Module,  # co-training ensemble
         #"ensemble_js_avg_100":CIFAR100EnsembleJS_Avg_Module,  # Mishtal ensemble
-        #}
+}
 
 script_dir = os.path.abspath(os.path.dirname(__file__))
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def traindata_eval(model,ind_data,device,softmax = True):   
+def traindata_eval(model,ind_data,device,softmax = True, store_split = False):
     """Custom evaluation function to output logits as arrays from models given the trained model on the training data. Used to generate training examples from random labels. 
 
     :param model: a model from interpensembles.modules. Should have a method "calibration" that outputs predictions (logits) and labels given images and labels. 
@@ -68,7 +82,7 @@ def traindata_eval(model,ind_data,device,softmax = True):
         for idx,batch in tqdm(enumerate(ind_data.train_dataloader(shuffle=False,aug=False))):
             ims = batch[0].to(device)
             labels = batch[1].to(device)
-            pred,label = model.calibration((ims,labels))
+            pred, label = model.calibration((ims,labels),store_split = True)
             ## to cpu
             predarray = pred.cpu().numpy() ## 256x10
             labelarray = label.cpu().numpy() ## 
@@ -79,7 +93,7 @@ def traindata_eval(model,ind_data,device,softmax = True):
     all_labels_array = np.concatenate(all_labels,axis = 0)
     return all_preds_array,all_labels_array
 
-def custom_eval(model,ind_data,ood_data,device,softmax = True):   
+def custom_eval(model,ind_data,ood_data,device,softmax = True, store_split=False):
     """Custom evaluation function to output logits as arrays from models given the trained model, in distribution data and out of distribution data. 
 
     :param model: a model from interpensembles.modules. Should have a method "calibration" that outputs predictions (logits) and labels given images and labels. 
@@ -102,7 +116,7 @@ def custom_eval(model,ind_data,ood_data,device,softmax = True):
         for idx,batch in tqdm(enumerate(ind_data.test_dataloader())):
             ims = batch[0].to(device)
             labels = batch[1].to(device)
-            pred,label = model.calibration((ims,labels))
+            pred, label = model.calibration((ims, labels), store_split=store_split)
             ## to cpu
             predarray = pred.cpu().numpy() ## 256x10
             labelarray = label.cpu().numpy() ## 
@@ -111,7 +125,7 @@ def custom_eval(model,ind_data,ood_data,device,softmax = True):
         for idx,batch in tqdm(enumerate(ood_data.test_dataloader())):
             ims = batch[0].to(device)
             labels = batch[1].to(device)
-            pred,label = model.calibration((ims,labels))
+            pred,label = model.calibration((ims,labels), store_split=store_split)
             ## to cpu
             predarray = pred.cpu().numpy() ## 256x10
             labelarray = label.cpu().numpy() ## 
@@ -135,9 +149,9 @@ def main(args):
 
     ## Set up logging. 
     if args.logger == "wandb":
-        logger = WandbLogger(name=args.classifier, project="cifar10")
+        logger = WandbLogger(name=args.classifier, project=args.test_set)
     elif args.logger == "tensorboard":
-        logger = TensorBoardLogger("cifar10", name=args.classifier)
+        logger = TensorBoardLogger(args.test_set, name=args.classifier)
 
     ## Configure checkpoint and trainer: 
     checkpoint = ModelCheckpoint(monitor="acc/val", mode="max", save_last=False, dirpath = os.path.join(script_dir,"../","models",args.classifier,args.module,datetime.datetime.now().strftime("%m-%d-%y"),datetime.datetime.now().strftime("%H_%M_%S")))
@@ -153,6 +167,7 @@ def main(args):
         "checkpoint_callback":checkpoint,
         "precision":args.precision,
         "auto_lr_find": bool(args.get('auto_lr_find', 0)),
+        "gradient_clip_val": args.get('gradient_clip_val', 0),
         }
 
     if torch.cuda.is_available():
@@ -169,7 +184,8 @@ def main(args):
             trainerargs['plugins'] = [ddp_plugin.DDPPlugin(find_unused_parameters=False)]
 
     if args.callbacks:
-        trainer = Trainer(**trainerargs,callbacks = [Check_GradNorm()])
+       #trainer = Trainer(**trainerargs,callbacks = [Check_GradNorm()])
+        trainer = Trainer(**trainerargs,callbacks = [GradNormCallbackSplit()])
     else:
         trainer = Trainer(**trainerargs)
 
@@ -192,7 +208,11 @@ def main(args):
             model = modules[args.module].load_from_checkpoint(checkpoint_path=args.checkpoint,hparams = args)
         ## Really should be the case for anything
         else:    
-            model = modules[args.module].load_from_checkpoint(checkpoint_path=args.checkpoint,hparams = args)
+            #model = modules[args.module].load_from_checkpoint(checkpoint_path=args.checkpoint,hparams = args)
+            ckpt = torch.load(args.checkpoint)
+            model = modules[args.module](**all_args)
+            model.load_state_dict(ckpt["state_dict"])
+
     else: ## if training from scratch or loading from state dict:    
         model = modules[args.module](**all_args)
         ## if loading from state dictionary instead of checkpoint: 
@@ -205,8 +225,8 @@ def main(args):
             else:     
                 state_dict = args.pretrained_path
             model.model.load_state_dict(torch.load(state_dict))
-            
-    ## what dataset should we evaluate on? 
+
+    ## what dataset should we evaluate on?
     if args.test_set == "CIFAR10":
         ind_data = CIFAR10Data(args)
     elif args.test_set == "wine":    
@@ -215,6 +235,10 @@ def main(args):
         ind_data = MNISTModule(args)
     elif args.test_set == "CIFAR100":    
         ind_data = CIFAR100Data(args)
+    elif args.test_set == "CIFAR100Coarse":
+        ind_data = CIFAR100CoarseData(args)
+    else:
+        raise ValueError("Unknown dataset")
 
     if args.ood_dataset == "cifar10_1":
         ood_data = CIFAR10_1Data(args,version =args.version)
@@ -230,6 +254,10 @@ def main(args):
         ood_data = MNISTModule(args)
     elif args.ood_dataset == "CIFAR100":    
         ood_data = CIFAR100Data(args)
+    elif args.ood_dataset == "CIFAR100Coarse":
+        ood_data = CIFAR100CoarseData(args)
+    else:
+        raise ValueError("Unknown dataset")
 
     ## do we train the model or not? 
     if bool(args.test_phase) or bool(args.random_eval):
@@ -237,13 +265,14 @@ def main(args):
     else:
         trainer.fit(model, ind_data)
 
-    ## testing and evaluation : 
+    ## testing and evaluation :
     data = {"in_dist_acc":None,"out_dist_acc":None}
     data["in_dist_acc"] = trainer.test(model, ind_data.test_dataloader())[0]["acc/test"]
     data["out_dist_acc"] = trainer.test(model, ood_data.test_dataloader())[0]["acc/test"]
 
-    preds_ind, labels_ind, preds_ood, labels_ood = custom_eval(model,ind_data,ood_data,device,softmax = bool(args.softmax))
-    preds_train,labels_train = traindata_eval(model,ind_data,device,softmax = bool(args.softmax))
+    store_split = args.get('store_split', False)
+    preds_ind, labels_ind, preds_ood, labels_ood = custom_eval(model,ind_data,ood_data,device,softmax = bool(args.softmax), store_split=store_split)
+    preds_train,labels_train = traindata_eval(model,ind_data,device,softmax = bool(args.softmax), store_split=store_split)
 
     full_path = "." #os.path.join(results_dir,"robust_results{}_{}_{}".format(datetime.datetime.now().strftime("%m-%d-%y_%H:%M.%S"),args.module,args.classifier))
     np.save("ind_preds",preds_ind)
@@ -268,7 +297,10 @@ def main(args):
     elif args.ood_dataset == "CIFAR100":
         np.save("ood_cifar100_{}_{}_preds".format(args.corruption,args.level),preds_ood)
         np.save("ood_cifar100_{}_{}_labels".format(args.corruption,args.level),labels_ood)
-    else:     
+    elif args.ood_dataset == "CIFAR100Coarse":
+        np.save("ood_cifar100coarse_{}_{}_preds".format(args.corruption, args.level), preds_ood)
+        np.save("ood_cifar100coarse_{}_{}_labels".format(args.corruption, args.level), labels_ood)
+    else:
         raise Exception("option for ood dataset not recognized.")
     ## write metadata
     metadata = {}

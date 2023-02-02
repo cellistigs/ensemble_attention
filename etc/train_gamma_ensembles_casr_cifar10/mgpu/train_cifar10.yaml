@@ -1,0 +1,50 @@
+name: gamma_ensemble_densenet161
+program: ../../../scripts/run.py
+method: grid
+
+metric:
+  name: loss/val
+  goal: minimize
+parameters:
+  data_dir:
+    value: /home/ekellbuchanan/pytorch_datasets/cifar10_ood/data
+  gamma:
+    values: [0]
+  max_epochs:
+    value: 150
+  logger:
+    value: 'wandb'
+  num_workers:
+    value: 8
+  module:
+    value: 'casregress_ensemble_jgap_onehot'
+  accelerator:
+    value: 'ddp'
+  gpus:
+    value: 8
+  learning_rate:
+    value: 1e-2
+  weight_decay:
+    value: 1e-5
+  batch_size:
+    value: 256
+  classifier:
+    value: "densenet161"
+  scheduler:
+    value: "lambdalr"
+  gradient_clip_val:
+    value: 0
+  callbacks:
+    value: 1
+# auto_lr_find:
+#    value: 0
+# gpu_id:
+#   value: "0"
+
+command:
+  - ${env}
+  - python
+  - ${program}
+  - "--config-name"
+  - "run_default_gpu"
+  - ${args_no_hyphens}

@@ -14,21 +14,23 @@ seed: null
 test_phase: 0   
 dev: 0
 logger: "tensorboard"  
-checkpoint: null  
+checkpoint: null
 softmax: 1  
 nb_models: 4  
 module: base
 
+# model arguments
+resnet_stride: 1
+classifier: resnet18
 
 # Trainer arguments 
-classifier: resnet18  
 random_eval: 0
 gamma: 1 ## weight of dkl argument. 
 pretrained: 0 ## if we use pretrained models or not.
 pretrained-path: null ## path to pretrained model
 precision: 32
 batch_size: 100
-max_epochs: 100  
+max_epochs: 200
 learning_rate: 1e-3
 weight_decay: 1e-2  
 scheduler: cosine

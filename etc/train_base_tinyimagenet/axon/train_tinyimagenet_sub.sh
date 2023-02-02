@@ -27,15 +27,18 @@ fi
 max_epochs=200
 logger="wandb"
 
-module="ensemble_jgap"
+module="base"
+classifier="resnet101"
 label_smoothing=0
+gamma=1.0
+seed=0
+batch_size=128
 resnet_stride=2
+weight_decay=1e-2
 
-for classifier in "resnet34"
+for resnet_stride in 1 2;
 do
-for seed in 0
-do
-for gamma in {1.0,0.5,0.0,0.2,1.2,1.5,2.0};
+for learning_rate in {0.01,0.03};
 do
 call_train "--config-name="${config_name}" \
   data_dir=${dataset_dir}  \
@@ -47,10 +50,13 @@ call_train "--config-name="${config_name}" \
   gamma=${gamma} \
   seed=${seed} \
   classifier=${classifier} \
+  learning_rate=${learning_rate} \
+  weight_decay=${weight_decay} \
+  batch_size=${batch_size} \
   resnet_stride=${resnet_stride} \
 
   "
-  sleep 1m # sleep for 1 minute
+
 done
 done
-done
+
