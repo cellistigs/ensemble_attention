@@ -14,6 +14,7 @@ logger: "tensorboard"
 checkpoint: null  
 softmax: 1  
 nb_models: 4  
+num_classes: 100
 module: ensemble  
 
 # Trainer arguments 
@@ -34,7 +35,7 @@ auto_lr_find: 0
 num_workers: 32 
 # gpu strategy
 gpus: 4
-accelerator: null 
+accelerator: ddp 
 
 # attention arguments for attention ensemble
 lamb: 0.5  #attention ensemble
