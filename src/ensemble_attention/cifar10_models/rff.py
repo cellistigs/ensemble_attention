@@ -64,3 +64,6 @@ def rff_casregress_10000_mnist():
 
 def rff_casregress_100000_mnist():    
     return RFF(784,100000,10)
+
+def rff_casregress_8000_mnist():    
+    return RFF(784,8000,10)

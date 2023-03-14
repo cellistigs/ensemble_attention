@@ -153,9 +153,11 @@ class ShakeResNet(nn.Module):
 
 
 # Only for CIFAR and SVHN
+def shake_resnet18_2x32d(**kwargs):
+    return ShakeResNet(depth=18, base_width=32, **kwargs)
+
 def shake_resnet26_2x32d(**kwargs):
     return ShakeResNet(depth=26, base_width=32, **kwargs)
-
 
 def shake_resnet26_2x64d(**kwargs):
     return ShakeResNet(depth=26, base_width=64, **kwargs)
