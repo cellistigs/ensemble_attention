@@ -17,6 +17,8 @@ nb_models: 4
 num_classes: 100
 module: ensemble  
 
+random_eval: 0
+
 # Trainer arguments 
 classifier: resnet18_cifar100  
 gamma: 1 ## weight of dkl argument. 
@@ -31,11 +33,15 @@ test_set: "CIFAR100"
 scheduler: step
 
 auto_lr_find: 0
+gradient_clip_val: 0
 
 num_workers: 32 
 # gpu strategy
 gpus: 4
 accelerator: ddp 
+
+# store arguments
+store_split: 0
 
 # attention arguments for attention ensemble
 lamb: 0.5  #attention ensemble

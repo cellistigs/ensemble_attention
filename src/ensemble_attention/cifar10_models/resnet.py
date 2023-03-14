@@ -473,6 +473,7 @@ class ResNet(nn.Module):
         width_per_group=64,
         replace_stride_with_dilation=None,
         norm_layer=None,
+        resnet_stride=1,
     ):
         super(ResNet, self).__init__()
         if norm_layer is None:
@@ -495,7 +496,7 @@ class ResNet(nn.Module):
 
         # CIFAR10: kernel_size 7 -> 3, stride 2 -> 1, padding 3->1
         self.conv1 = nn.Conv2d(
-            3, self.inplanes, kernel_size=3, stride=1, padding=1, bias=False
+            3, self.inplanes, kernel_size=3, stride=resnet_stride, padding=1, bias=False
         )
         # END
 
@@ -901,7 +902,7 @@ def _resnet(arch, block, layers, pretrained, progress, device, **kwargs):
     return model
 
 def _resnet_regress(arch, block, layers, pretrained, progress, device, **kwargs):
-    model = ResNet(block,layers,num_classes=1, **kwargs)
+    model = ResNet(block=block,num_classes=1,layers=layers, **kwargs)
     if pretrained:
         script_dir = os.path.dirname(__file__)
         state_dict = torch.load(
@@ -1013,6 +1014,16 @@ def resnet50(pretrained=False, progress=True, device="cpu", **kwargs):
     """
     return _resnet(
         "resnet50", Bottleneck, [3, 4, 6, 3], pretrained, progress, device, **kwargs
+    )
+
+def resnet101(pretrained=False, progress=True, device="cpu", **kwargs):
+    """Constructs a ResNet-50 model.
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
+    """
+    return _resnet(
+        "resnet50", Bottleneck, [3, 4, 23, 3], pretrained, progress, device, **kwargs
     )
  
 def resnet18_regression(pretrained=False,progress=True,device = "cpu",**kwargs):

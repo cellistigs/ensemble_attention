@@ -65,7 +65,7 @@ def lenet5(pretrained=False, progress=True, device="cpu", **kwargs):
       transform_input (bool): If True, preprocesses the input according to the method with which it
           was trained on ImageNet. Default: *False*
   """
-  model = LeNet5()
+  model = LeNet5(**kwargs)
   if pretrained:
     raise NotImplementedError('pretrained model is NA')
   return model

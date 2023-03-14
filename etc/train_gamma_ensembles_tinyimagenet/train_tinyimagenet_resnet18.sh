@@ -2,7 +2,8 @@
 
 # Train resnet18 on tiny imagenet model
 
-logger="wandb"
+#logger="wandb"
+logger="tensorboard"
 seed=0
 
 dataset_dir="${HOME}/pytorch_datasets/tiny-imagenet-200"
@@ -21,8 +22,9 @@ num_workers=16
 fi
 
 pretrained=0
-module="base"
+module="ensemble_jgap"
 max_epochs=100
+classifier="resnet34"
 
 pushd ../../
 
@@ -35,5 +37,6 @@ python scripts/run_tinyimagenet.py \
   module=${module} \
   seed=${seed} \
   pretrained=${pretrained} \
+  classifier=${classifier} \
 
 popd

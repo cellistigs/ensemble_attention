@@ -395,7 +395,7 @@ class Model_JS_Avg(object):
         assert cost_format in ["torch","numpy"], "format must be either `torch` or `numpy`"
         self.format = cost_format
 
-    def js_avg(self, probs):
+    def js_avg(self,probs):
         if self.format == "numpy":
             return self.js_avg_numpy(probs)
         elif self.format == "torch":
@@ -456,7 +456,7 @@ class Model_DKL_Avg(object):
         assert cost_format in ["torch","numpy"], "format must be either `torch` or `numpy`"
         self.format = cost_format
 
-    def dkl_avg(self, probs):
+    def dkl_avg(self,probs):
         if self.format == "numpy":
             return self.dkl_avg_numpy(probs)
         elif self.format == "torch":
