@@ -14,7 +14,7 @@ from .cifar10_models.vgg import vgg11_bn, vgg13_bn, vgg16_bn, vgg19_bn
 from .cifar10_models.lenet import lenet5
 from .cifar10_models.rff import rff_regress_1000_wine,rff_regress_10000_wine,rff_regress_100000_wine,linreg_wine,rff_casregress_1000_mnist,rff_casregress_8000_mnist,rff_casregress_10000_mnist,rff_casregress_100000_mnist
 from .cifar10_models.shake_shake import shake_resnet26_2x96d,shake_resnet26_2x32d
-from .cifar100_models.resnet import resnet18_cifar100
+from .cifar100_models.resnet import resnet18_cifar100,wideresnet18_cifar100
 from .cifar100_models.vgg import vgg13_bn_cifar100
 from .cifar100_models.densenet import densenet121_cifar100
 from .cifar100_models.shake_shake import shake_resnet26_2x32d_cifar100
@@ -51,7 +51,8 @@ all_classifiers = {
     "resnet18_cifar100": resnet18_cifar100,
     "vgg13_cifar100": vgg13_bn_cifar100,
     "densenet121_cifar100": densenet121_cifar100,
-    "shake_26_32_cifar100": shake_resnet26_2x32d_cifar100
+    "shake_26_32_cifar100": shake_resnet26_2x32d_cifar100,
+    "wideresnet18_cifar100": wideresnet18_cifar100,
 }
 
 all_regressors = {
@@ -883,7 +884,7 @@ class CIFAR10EnsembleModule(CIFAR10_Models):
         elif self.hparams.scheduler == "step":    
             scheduler = {
                 "scheduler": torch.optim.lr_scheduler.MultiStepLR(
-                    optimizer, milestones = [60/self.hparams.gpus,120/self.hparams.gpus,160/self.hparams.gpus], gamma = 0.2, last_epoch=-1
+                    optimizer, milestones = [60,120,160], gamma = 0.2, last_epoch=-1
                 ),
                 "interval": "epoch",
                 "frequency":1,
@@ -970,7 +971,7 @@ class CIFAR10EnsembleDKLModule(CIFAR10EnsembleModule):
         elif self.hparams.scheduler == "step":    
             scheduler = {
                 "scheduler": torch.optim.lr_scheduler.MultiStepLR(
-                    optimizer, milestones = [60/self.hparams.gpus,120/self.hparams.gpus,160/self.hparams.gpus], gamma = 0.2, last_epoch=-1
+                    optimizer, milestones = [60,120,160], gamma = 0.2, last_epoch=-1
                 ),
                 "interval": "epoch",
                 "frequency":1,
