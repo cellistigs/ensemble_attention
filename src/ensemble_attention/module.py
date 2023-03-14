@@ -884,7 +884,7 @@ class CIFAR10EnsembleModule(CIFAR10_Models):
         elif self.hparams.scheduler == "step":    
             scheduler = {
                 "scheduler": torch.optim.lr_scheduler.MultiStepLR(
-                    optimizer, milestones = [60,120,160], gamma = 0.2, last_epoch=-1
+                    optimizer, milestones = [60/self.hparams.gpus,120/self.hparams.gpus,160/self.hparams.gpus], gamma = 0.2, last_epoch=-1
                 ),
                 "interval": "epoch",
                 "frequency":1,
@@ -971,7 +971,7 @@ class CIFAR10EnsembleDKLModule(CIFAR10EnsembleModule):
         elif self.hparams.scheduler == "step":    
             scheduler = {
                 "scheduler": torch.optim.lr_scheduler.MultiStepLR(
-                    optimizer, milestones = [60,120,160], gamma = 0.2, last_epoch=-1
+                    optimizer, milestones = [60/self.hparams.gpus,120/self.hparams.gpus,160/self.hparams.gpus], gamma = 0.2, last_epoch=-1
                 ),
                 "interval": "epoch",
                 "frequency":1,
