@@ -901,7 +901,7 @@ def _resnet(arch, block, layers, pretrained, progress, device, **kwargs):
     return model
 
 def _resnet_regress(arch, block, layers, pretrained, progress, device, **kwargs):
-    model = ResNet(block,num_classes=1,layers, **kwargs)
+    model = ResNet(block,layers,num_classes=1, **kwargs)
     if pretrained:
         script_dir = os.path.dirname(__file__)
         state_dict = torch.load(

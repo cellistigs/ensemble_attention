@@ -124,7 +124,7 @@ def custom_eval(model,ind_data,ood_data,device,softmax = True):
     all_labels_ood_array = np.concatenate(all_labels_ood,axis = 0)
     return all_preds_ind_array,all_labels_ind_array,all_preds_ood_array,all_labels_ood_array
 
-@hydra.main(config_path = os.path.join(script_dir,"../configs/"),config_name = "run_default_gpu")
+@hydra.main(config_path = os.path.join(script_dir,"../configs/"),config_name = "run_default_gpu_tinyimagenet")
 def main(args):
 
     ## Set seeds if given.  
