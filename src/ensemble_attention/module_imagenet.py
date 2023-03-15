@@ -3,6 +3,7 @@ from .schduler import WarmupCosineLR
 import torch
 from pytorch_lightning.metrics import Accuracy
 import torch.nn as nn
+from .metrics import Model_D_KL,Model_Ortega_Variance,Model_JS_Unif,Model_JS_Avg,Model_DKL_Avg,Regression_Var
 
 import torchvision.models as models
 
@@ -43,7 +44,7 @@ class Imagenet_Models(pl.LightningModule):
     if self.hparams.scheduler in [None, "cosine"]:
       scheduler = {
         "scheduler": WarmupCosineLR(
-          optimizer, warmup_epochs=total_steps * 0.3, max_epochs=total_steps
+          optimizer, warmup_epochs=(total_steps * 0.3)/self.hparams.gpus, max_epochs=total_steps/self.hparams.gpus
         ),
         "interval": "step",
         "name": "learning_rate",
@@ -232,8 +233,8 @@ class TinyImagenetEnsembleModule(Imagenet_Models):
       scheduler = {
         "scheduler": WarmupCosineLR(
           optimizer,
-          warmup_epochs=total_steps * 0.3,
-          max_epochs=total_steps,
+          warmup_epochs=(total_steps * 0.3)/self.hparams.gpus,
+          max_epochs=total_steps/self.hparams.gpus,
           warmup_start_lr=1e-8,
           eta_min=1e-8
           # warmup_start_lr = 1e-8*len(self.models),
@@ -299,7 +300,7 @@ class TinyImagenetEnsembleDKLModule(TinyImagenetEnsembleModule):
     self.log("acc/train", accuracy * 100)
     self.log("reg/mloss", mloss)
     self.log("reg/jgap", dklloss)
-    self.log("reg/avg_sm_loss", avg_sm_loss)
+    #self.log("reg/avg_sm_loss", avg_sm_loss)
     return loss
 
 class TinyImagenetEnsembleJGAPModule(TinyImagenetEnsembleModule):
