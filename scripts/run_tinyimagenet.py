@@ -21,7 +21,8 @@ from omegaconf import DictConfig, OmegaConf
 from cifar10_ood.data import CIFAR10Data,CIFAR10_1Data,CINIC10_Data,CIFAR10_CData
 from ensemble_attention.data import TinyImagenetData
 from ensemble_attention.module_imagenet import TinyImagenetModule, TinyImagenetEnsembleModule, \
-TinyImagenetEnsembleJGAPModule, TinyImagenetEnsembleDKLModule
+TinyImagenetEnsembleJGAPModule, TinyImagenetEnsembleDKLModule, TinyImagenetEnsemblePAC2BModule, \
+TinyImagenetEnsembleJS_Unif_Module,TinyImagenetEnsembleJS_Avg_Module
 
 modules = {
         "base":CIFAR10Module,
@@ -32,6 +33,9 @@ modules = {
         "ensemble_jgap":CIFAR10EnsembleJGAPModule,  #jgap ensemble with jgap with cifar10 models.
         "ensemble_jgap_tinyimagenet":TinyImagenetEnsembleJGAPModule,  #jgap ensemble with imagenet models.
         "ensemble_dkl_tinyimagenet":TinyImagenetEnsembleDKLModule,  #jgap ensemble with imagenet models.
+        "ensemble_var_tinyimagenet":TinyImagenetEnsemblePAC2BModule,  #jgap ensemble with imagenet models.
+        "ensemble_js_unif_tinyimagenet":TinyImagenetEnsembleJS_Unif_Module,  #jgap ensemble with imagenet models.
+        "ensemble_js_avg_tinyimagenet":TinyImagenetEnsembleJS_Avg_Module,  #jgap ensemble with imagenet models.
         #"ensemble_jgapl":CIFAR10EnsembleJGAPLModule,  #jgap ensemble with jgap w logit averaging.
         #"ensemble_p2b":CIFAR10EnsemblePAC2BModule,  # Ortega ensemble*
         #"ensemble_js_unif":CIFAR10EnsembleJS_Unif_Module,  # co-training ensemble*
