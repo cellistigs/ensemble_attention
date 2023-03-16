@@ -303,6 +303,159 @@ class TinyImagenetEnsembleDKLModule(TinyImagenetEnsembleModule):
     #self.log("reg/avg_sm_loss", avg_sm_loss)
     return loss
 
+class TinyImagenetEnsemblePAC2BModule(TinyImagenetEnsembleModule):
+  """Formulation of the ensemble as a regularized single model with variable weight on regularization with PAC2B loss
+  from ortega et al. NOTE: sign of gamma is flipped here relative to others. 
+
+  """
+
+  def __init__(self, hparams):
+    super().__init__(hparams)
+
+    self.traincriterion = NLLLoss_label_smooth(self.num_classes, self.label_smoothing)
+    self.var = Model_Ortega_Variance("torch")
+    self.gamma = hparams.gamma
+
+  def training_step(self, batch, batch_nb):
+    """When we train, we want to train independently.
+    Loss = NLL(log \bar{f}, y ) + gamma*JGAP(softmaxes, label)
+    JGAP = 1/M sum_i^M CE(f_i,y) - NLL(log \bar{f}, y )
+    """
+    softmax = torch.nn.Softmax(dim=1)
+
+    images, labels = batch
+    losses = []
+    accs = []
+    softmaxes = []
+    for m in self.models:
+      # get logits
+      predictions = m(images)
+      normed = softmax(predictions)
+      softmaxes.append(normed)
+      mloss = self.criterion(predictions, labels)
+      # accuracy = self.accuracy(predictions,labels)
+      losses.append(mloss)
+      accs.append(accuracy)
+    llloss = sum(losses)/self.nb_models
+    avg_accuracy = sum(accs)/self.nb_models
+
+    varloss = torch.mean(self.var.var([torch.log(s) for s in softmaxes],labels))
+
+    #logoutput = torch.log(torch.mean(torch.stack(softmaxes), dim=0))
+    #mloss = self.traincriterion(logoutput, labels)
+    #dklloss = torch.mean(self.kl.kl(softmaxes,labels))
+    loss = (llloss - self.gamma*varloss)
+    accuracy = self.accuracy(logoutput,labels)
+
+
+    lr = self.trainer.lr_schedulers[0]["scheduler"].get_last_lr()[-1]
+    self.log("lr/lr", lr)
+    self.log("loss/train_ll", llloss)
+    self.log("loss/train", loss)
+    self.log("acc/train", accuracy * 100)
+    self.log("reg/var", varloss)
+    #self.log("reg/avg_sm_loss", avg_sm_loss)
+    return loss
+
+class TinyImagenetEnsembleJS_Unif_Module(TinyImagenetEnsembleModule):
+  def __init__(self, hparams):
+    super().__init__(hparams)
+
+    self.traincriterion = NLLLoss_label_smooth(self.num_classes, self.label_smoothing)
+    self.js = Model_JS_Unif("torch")
+    self.gamma = hparams.gamma
+
+  def training_step(self, batch, batch_nb):
+    """When we train, we want to train independently.
+    Loss = NLL(log \bar{f}, y ) + gamma*JGAP(softmaxes, label)
+    JGAP = 1/M sum_i^M CE(f_i,y) - NLL(log \bar{f}, y )
+    """
+    softmax = torch.nn.Softmax(dim=1)
+
+    images, labels = batch
+    losses = []
+    accs = []
+    softmaxes = []
+    for m in self.models:
+      # get logits
+      predictions = m(images)
+      normed = softmax(predictions)
+      softmaxes.append(normed)
+      mloss = self.criterion(predictions, labels)
+      # accuracy = self.accuracy(predictions,labels)
+      losses.append(mloss)
+      accs.append(accuracy)
+    llloss = sum(losses)/self.nb_models
+    avg_accuracy = sum(accs)/self.nb_models
+
+    divloss = torch.mean(self.js.js_unif([s for s in softmaxes]))
+    #varloss = torch.mean(self.var.var([torch.log(s) for s in softmaxes],labels))
+
+    #logoutput = torch.log(torch.mean(torch.stack(softmaxes), dim=0))
+    #mloss = self.traincriterion(logoutput, labels)
+    #dklloss = torch.mean(self.kl.kl(softmaxes,labels))
+    loss = (llloss + self.gamma*divloss)
+    accuracy = self.accuracy(logoutput,labels)
+
+
+    lr = self.trainer.lr_schedulers[0]["scheduler"].get_last_lr()[-1]
+    self.log("lr/lr", lr)
+    self.log("loss/train_ll", llloss)
+    self.log("loss/train", loss)
+    self.log("acc/train", accuracy * 100)
+    self.log("reg/var", varloss)
+    #self.log("reg/avg_sm_loss", avg_sm_loss)
+    return loss
+
+class TinyImagenetEnsembleJS_Avg_Module(TinyImagenetEnsembleModule):
+  def __init__(self, hparams):
+    super().__init__(hparams)
+
+    self.traincriterion = NLLLoss_label_smooth(self.num_classes, self.label_smoothing)
+    self.js = Model_JS_Avg("torch")
+    self.gamma = hparams.gamma
+
+  def training_step(self, batch, batch_nb):
+    """When we train, we want to train independently.
+    Loss = NLL(log \bar{f}, y ) + gamma*JGAP(softmaxes, label)
+    JGAP = 1/M sum_i^M CE(f_i,y) - NLL(log \bar{f}, y )
+    """
+    softmax = torch.nn.Softmax(dim=1)
+
+    images, labels = batch
+    losses = []
+    accs = []
+    softmaxes = []
+    for m in self.models:
+      # get logits
+      predictions = m(images)
+      normed = softmax(predictions)
+      softmaxes.append(normed)
+      mloss = self.criterion(predictions, labels)
+      # accuracy = self.accuracy(predictions,labels)
+      losses.append(mloss)
+      accs.append(accuracy)
+    llloss = sum(losses)/self.nb_models
+    avg_accuracy = sum(accs)/self.nb_models
+
+    divloss = torch.mean(self.js.js_avg([s for s in softmaxes]))
+    #varloss = torch.mean(self.var.var([torch.log(s) for s in softmaxes],labels))
+
+    #logoutput = torch.log(torch.mean(torch.stack(softmaxes), dim=0))
+    #mloss = self.traincriterion(logoutput, labels)
+    #dklloss = torch.mean(self.kl.kl(softmaxes,labels))
+    loss = (llloss + self.gamma*divloss)
+    accuracy = self.accuracy(logoutput,labels)
+
+
+    lr = self.trainer.lr_schedulers[0]["scheduler"].get_last_lr()[-1]
+    self.log("lr/lr", lr)
+    self.log("loss/train_ll", llloss)
+    self.log("loss/train", loss)
+    self.log("acc/train", accuracy * 100)
+    self.log("reg/var", varloss)
+    #self.log("reg/avg_sm_loss", avg_sm_loss)
+    return loss
 class TinyImagenetEnsembleJGAPModule(TinyImagenetEnsembleModule):
   """Formulation of the ensemble as a regularized single model with variable weight on regularization.
 
