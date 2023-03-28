@@ -28,7 +28,7 @@ if [ "$(hostname)" = "ekb-lp" ]; then
 
 fi
 
-exir
+
 pretrained=0
 module="base_imagenet"
 max_epochs=2 # 100
