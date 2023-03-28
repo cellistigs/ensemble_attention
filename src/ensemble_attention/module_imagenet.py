@@ -333,7 +333,7 @@ class TinyImagenetEnsemblePAC2BModule(TinyImagenetEnsembleModule):
       normed = softmax(predictions)
       softmaxes.append(normed)
       mloss = self.criterion(predictions, labels)
-      # accuracy = self.accuracy(predictions,labels)
+      accuracy = self.accuracy(predictions,labels)
       losses.append(mloss)
       accs.append(accuracy)
     llloss = sum(losses)/self.nb_models
@@ -345,14 +345,14 @@ class TinyImagenetEnsemblePAC2BModule(TinyImagenetEnsembleModule):
     #mloss = self.traincriterion(logoutput, labels)
     #dklloss = torch.mean(self.kl.kl(softmaxes,labels))
     loss = (llloss - self.gamma*varloss)
-    accuracy = self.accuracy(logoutput,labels)
+    #accuracy = self.accuracy(logoutput,labels)
 
 
     lr = self.trainer.lr_schedulers[0]["scheduler"].get_last_lr()[-1]
     self.log("lr/lr", lr)
     self.log("loss/train_ll", llloss)
     self.log("loss/train", loss)
-    self.log("acc/train", accuracy * 100)
+    self.log("acc/train", avg_accuracy * 100)
     self.log("reg/var", varloss)
     #self.log("reg/avg_sm_loss", avg_sm_loss)
     return loss
@@ -382,7 +382,7 @@ class TinyImagenetEnsembleJS_Unif_Module(TinyImagenetEnsembleModule):
       normed = softmax(predictions)
       softmaxes.append(normed)
       mloss = self.criterion(predictions, labels)
-      # accuracy = self.accuracy(predictions,labels)
+      accuracy = self.accuracy(predictions,labels)
       losses.append(mloss)
       accs.append(accuracy)
     llloss = sum(losses)/self.nb_models
@@ -395,15 +395,15 @@ class TinyImagenetEnsembleJS_Unif_Module(TinyImagenetEnsembleModule):
     #mloss = self.traincriterion(logoutput, labels)
     #dklloss = torch.mean(self.kl.kl(softmaxes,labels))
     loss = (llloss + self.gamma*divloss)
-    accuracy = self.accuracy(logoutput,labels)
+    #accuracy = self.accuracy(logoutput,labels)
 
 
     lr = self.trainer.lr_schedulers[0]["scheduler"].get_last_lr()[-1]
     self.log("lr/lr", lr)
     self.log("loss/train_ll", llloss)
     self.log("loss/train", loss)
-    self.log("acc/train", accuracy * 100)
-    self.log("reg/var", varloss)
+    self.log("acc/train", avg_accuracy * 100)
+    self.log("reg/div", divloss)
     #self.log("reg/avg_sm_loss", avg_sm_loss)
     return loss
 
@@ -432,7 +432,7 @@ class TinyImagenetEnsembleJS_Avg_Module(TinyImagenetEnsembleModule):
       normed = softmax(predictions)
       softmaxes.append(normed)
       mloss = self.criterion(predictions, labels)
-      # accuracy = self.accuracy(predictions,labels)
+      accuracy = self.accuracy(predictions,labels)
       losses.append(mloss)
       accs.append(accuracy)
     llloss = sum(losses)/self.nb_models
@@ -445,15 +445,15 @@ class TinyImagenetEnsembleJS_Avg_Module(TinyImagenetEnsembleModule):
     #mloss = self.traincriterion(logoutput, labels)
     #dklloss = torch.mean(self.kl.kl(softmaxes,labels))
     loss = (llloss + self.gamma*divloss)
-    accuracy = self.accuracy(logoutput,labels)
+    #accuracy = self.accuracy(logoutput,labels)
 
 
     lr = self.trainer.lr_schedulers[0]["scheduler"].get_last_lr()[-1]
     self.log("lr/lr", lr)
     self.log("loss/train_ll", llloss)
     self.log("loss/train", loss)
-    self.log("acc/train", accuracy * 100)
-    self.log("reg/var", varloss)
+    self.log("acc/train", avg_accuracy * 100)
+    self.log("reg/div", divloss)
     #self.log("reg/avg_sm_loss", avg_sm_loss)
     return loss
 class TinyImagenetEnsembleJGAPModule(TinyImagenetEnsembleModule):
