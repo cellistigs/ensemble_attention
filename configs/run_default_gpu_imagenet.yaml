@@ -1,0 +1,52 @@
+# Program arguments:
+# data arguments
+data_dir: /home/ekellbuch/pytorch_datasets/imagenet
+ood_dataset:
+num_classes: 1000
+test_set: "imagenet"
+
+version: v4
+level: null
+corruption: null
+deterministic: 0
+seed: null  
+test_phase: 0   
+dev: 0
+logger: "tensorboard"  
+checkpoint: null
+softmax: 1  
+nb_models: 4  
+module: base_imagenet
+
+# model arguments
+
+# Trainer arguments 
+classifier: resnet18
+gamma: 1 ## weight of dkl argument.
+pretrained: 0 ## if we use pretrained models or not.
+pretrained-path: null ## path to pretrained model
+precision: 32
+batch_size: 256
+max_epochs: 100
+learning_rate: 0.1
+weight_decay: 1e-4  
+scheduler: lambdalr
+
+auto_lr_find: 0
+
+num_workers: 32 
+# gpu strategy
+gpus: 4
+accelerator: "ddp"
+gpu_id: "0"
+
+label_smoothing: 0
+
+callbacks: 0 ## whether to use callbacks to debug.
+random_eval: 0
+
+
+# attention arguments for attention ensemble
+lamb: 0.5  #attention ensemble
+embedding_dim: 25 ## attention embedding
+start_attention: 10 ## epoch on which to start attentio
