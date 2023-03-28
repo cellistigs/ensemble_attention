@@ -27,7 +27,7 @@ pretrained: 0 ## if we use pretrained models or not.
 pretrained-path: null ## path to pretrained model
 precision: 32
 batch_size: 256
-max_epochs: 100
+max_epochs: 90
 learning_rate: 0.1
 weight_decay: 1e-4  
 scheduler: lambdalr
