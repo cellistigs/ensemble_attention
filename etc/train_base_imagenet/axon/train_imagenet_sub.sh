@@ -21,12 +21,12 @@ num_workers=4
 
 elif [ "$(uname)" = "Linux" ]; then
 config_name="run_default_gpu_imagenet"
-num_workers=56
+num_workers=32
 fi
 
 logger="wandb"
 
-module="ensemble_dkl_imagenet"
+module="base_imagenet"
 classifier="resnet18"
 label_smoothing=0
 gamma=1.0

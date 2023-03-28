@@ -218,8 +218,9 @@ def main(args):
 
     ## log where checkpoints and logits are stored:
     if args.logger == "wandb":
-        logger.experiment.config['out_checkpoint_dir'] = checkpoint.dirpath
-        logger.experiment.config['out_logits_dir'] = os.getcwdb()
+        pass # not compatible with slurm
+        #logger.experiment.config['out_checkpoint_dir'] = checkpoint.dirpath
+        #logger.experiment.config['out_logits_dir'] = os.getcwdb()
 
 
     ## what dataset should we evaluate on?

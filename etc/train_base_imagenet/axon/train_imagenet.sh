@@ -17,6 +17,12 @@ ml load anaconda3-2019.03;
 source activate interp
 #. activate interp
 
+
+# debugging flags (optional)
+export NCCL_DEBUG=INFO
+export PYTHONFAULTHANDLER=1
+export  HYDRA_FULL_ERROR=1
+
 echo "Begin call: scrips/run_imagenet.py $1"
 #pushd ../../../
 #python  scripts/run.py $1
