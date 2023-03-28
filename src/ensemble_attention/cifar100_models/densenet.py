@@ -190,7 +190,7 @@ def _densenet(
     return model
 
 
-def densenet121(pretrained=False, progress=True, device="cpu", **kwargs):
+def densenet121_cifar100(pretrained=False, progress=True, device="cpu", **kwargs):
     r"""Densenet-121 model from
     `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_
 

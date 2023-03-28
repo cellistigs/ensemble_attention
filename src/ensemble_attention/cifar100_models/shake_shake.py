@@ -93,7 +93,7 @@ class ShakeBlock(nn.Module):
 
 class ShakeResNet(nn.Module):
 
-    def __init__(self, depth, base_width, num_classes=100, dataset='cifar10', split_factor=1):
+    def __init__(self, depth, base_width, num_classes=100, dataset='cifar100', split_factor=1):
         super(ShakeResNet, self).__init__()
         n_units = (depth - 2) / 6
 
@@ -156,7 +156,7 @@ class ShakeResNet(nn.Module):
 def shake_resnet18_2x32d(**kwargs):
     return ShakeResNet(depth=18, base_width=32, **kwargs)
 
-def shake_resnet26_2x32d(**kwargs):
+def shake_resnet26_2x32d_cifar100(**kwargs):
     return ShakeResNet(depth=26, base_width=32, **kwargs)
 
 def shake_resnet26_2x64d(**kwargs):
