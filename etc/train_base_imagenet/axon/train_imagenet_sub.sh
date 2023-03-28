@@ -21,7 +21,7 @@ num_workers=4
 
 elif [ "$(uname)" = "Linux" ]; then
 config_name="run_default_gpu_imagenet"
-num_workers=4
+num_workers=56
 fi
 
 logger="wandb"
