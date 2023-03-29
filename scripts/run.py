@@ -133,6 +133,7 @@ def custom_eval(model,ind_data,ood_data,device,softmax = True, store_split=False
             try:
                 pred,label = model.calibration((ims,labels))
             except TypeError:
+                pred, label = model.calibration((ims, labels))
             ## to cpu
             predarray = pred.cpu().numpy() ## 256x10
             labelarray = label.cpu().numpy() ## 
