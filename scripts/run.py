@@ -231,6 +231,8 @@ def main(args):
     ## what dataset should we evaluate on?
     if args.test_set == "CIFAR10":
         ind_data = CIFAR10Data(args)
+    if args.test_set == "CIFAR10_bag":
+        ind_data = CIFAR10_BagData(args)
     elif args.test_set == "wine":    
         ind_data = WineDataModule(args)
     elif args.test_set == "mnist":    
