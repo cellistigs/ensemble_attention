@@ -84,7 +84,10 @@ def traindata_eval(model,ind_data,device,softmax = True, store_split = False):
         for idx,batch in tqdm(enumerate(ind_data.train_dataloader(shuffle=False,aug=False))):
             ims = batch[0].to(device)
             labels = batch[1].to(device)
-            pred, label = model.calibration((ims,labels),store_split = True)
+            try:
+                pred, label = model.calibration((ims,labels),store_split = True)
+            except TypeError:    
+                pred, label = model.calibration((ims,labels))
             ## to cpu
             predarray = pred.cpu().numpy() ## 256x10
             labelarray = label.cpu().numpy() ## 
