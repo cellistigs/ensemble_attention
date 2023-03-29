@@ -65,7 +65,7 @@ all_classifiers = {
     "shake_26_32_cifar100": shake_resnet26_2x32d_cifar100,
     "rff_100":rff_100_mnist,
     "rff_10000":rff_10000_mnist,
-    "rff_100000":rff_100000_mnist
+    "rff_100000":rff_100000_mnist,
     "wideresnet18_cifar100": wideresnet18_cifar100,
     "wideresnet28_20" : wideresnet28_20,
     # missing from public codebase
