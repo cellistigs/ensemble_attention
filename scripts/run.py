@@ -118,7 +118,10 @@ def custom_eval(model,ind_data,ood_data,device,softmax = True, store_split=False
         for idx,batch in tqdm(enumerate(ind_data.test_dataloader())):
             ims = batch[0].to(device)
             labels = batch[1].to(device)
-            pred, label = model.calibration((ims, labels), store_split=store_split)
+            try:
+                pred, label = model.calibration((ims, labels), store_split=store_split)
+            except TypeError:
+                pred, label = model.calibration((ims, labels))
             ## to cpu
             predarray = pred.cpu().numpy() ## 256x10
             labelarray = label.cpu().numpy() ## 
@@ -127,7 +130,9 @@ def custom_eval(model,ind_data,ood_data,device,softmax = True, store_split=False
         for idx,batch in tqdm(enumerate(ood_data.test_dataloader())):
             ims = batch[0].to(device)
             labels = batch[1].to(device)
-            pred,label = model.calibration((ims,labels), store_split=store_split)
+            try:
+                pred,label = model.calibration((ims,labels))
+            except TypeError:
             ## to cpu
             predarray = pred.cpu().numpy() ## 256x10
             labelarray = label.cpu().numpy() ## 
@@ -140,7 +145,7 @@ def custom_eval(model,ind_data,ood_data,device,softmax = True, store_split=False
     all_labels_ood_array = np.concatenate(all_labels_ood,axis = 0)
     return all_preds_ind_array,all_labels_ind_array,all_preds_ood_array,all_labels_ood_array
 
-@hydra.main(config_path = os.path.join(script_dir,"../configs/"),config_name = "run_default_gpu_tinyimagenet")
+@hydra.main(config_path = os.path.join(script_dir,"../configs/"),config_name = "run_default_gpu")
 def main(args):
 
     ## Set seeds if given.  
@@ -231,7 +236,7 @@ def main(args):
     ## what dataset should we evaluate on?
     if args.test_set == "CIFAR10":
         ind_data = CIFAR10Data(args)
-    if args.test_set == "CIFAR10_bag":
+    elif args.test_set == "CIFAR10_bag":
         ind_data = CIFAR10_BagData(args)
     elif args.test_set == "wine":    
         ind_data = WineDataModule(args)
