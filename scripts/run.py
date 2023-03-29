@@ -29,7 +29,7 @@ from ensemble_attention.callback import GradNormCallbackSplit, GradNormCallback
 from pytorch_lightning.plugins import ddp_plugin
 
 from ensemble_attention.dataset import WineDataModule,MNISTModule,MNISTModule_class
-from cifar10_ood.data import CIFAR10Data,CIFAR10_1Data,CINIC10_Data,CIFAR10_CData, CIFAR100Data, CIFAR100CoarseData
+from cifar10_ood.data import CIFAR10Data,CIFAR10_BagData,CIFAR10_1Data,CINIC10_Data,CIFAR10_CData, CIFAR100Data, CIFAR100CoarseData
 
 
 modules = {"base":CIFAR10Module,
