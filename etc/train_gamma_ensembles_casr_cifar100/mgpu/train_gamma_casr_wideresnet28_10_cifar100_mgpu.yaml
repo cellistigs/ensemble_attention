@@ -1,0 +1,40 @@
+name: cifar100_gamma_casr_wideresnet28_10
+program: ../../../scripts/run.py
+method: grid
+
+metric:
+  name: loss/val
+  goal: minimize
+parameters:
+  data_dir:
+    value: /home/ekellbuchanan/pytorch_datasets/cifar-100-python
+  gamma:
+    value: 1
+  max_epochs:
+    value: 160
+  logger:
+    value: 'wandb'
+  num_workers:
+    value: 8
+  module:
+    value: 'casregress_ensemble_jgap_onehot'
+  accelerator:
+    value: 'ddp'
+  gpus:
+    value: 8
+  learning_rate:
+    value: 1e-1
+  weight_decay:
+    value: 5e-4
+  classifier:
+    value: 'wideresnet28_10'
+  batch_size:
+    value: 256
+
+command:
+  - ${env}
+  - python
+  - ${program}
+  - "--config-name"
+  - "run_gpu_cifar100"
+  - ${args_no_hyphens}

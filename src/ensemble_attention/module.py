@@ -3,20 +3,32 @@ import torch
 from pytorch_lightning.metrics import Accuracy,ExplainedVariance
 
 from .cifar10_models.densenet import densenet121, densenet161, densenet169
-from .cifar10_models.resnet_cifar import resnet8_cf
 from .cifar10_models.googlenet import googlenet
 from .cifar10_models.inception import inception_v3
 from .cifar10_models.mobilenetv2 import mobilenet_v2
-from .cifar10_models.resnet import resnet18, resnet34, resnet50, wideresnet18, wideresnet18_4,widesubresnet18,wideresnet18_4_grouplinear
-from .cifar10_models.efficientnet import efficientnet_b2,efficientnet_b1,efficientnet_b0
+from .cifar10_models.resnet import resnet18, resnet34, resnet50, wideresnet18, wideresnet18_4, widesubresnet18,wideresnet18_4_grouplinear, resnet101
 from .cifar10_models.wideresnet_28 import wideresnet28_10
 from .cifar10_models.vgg import vgg11_bn, vgg13_bn, vgg16_bn, vgg19_bn
 from .cifar10_models.rff import rff_regress_1000_wine,rff_regress_10000_wine,rff_regress_100000_wine,linreg_wine,rff_casregress_1000_mnist,rff_casregress_8000_mnist,rff_casregress_10000_mnist,rff_casregress_100000_mnist,rff_100_mnist,rff_10000_mnist,rff_100000_mnist
+from .cifar10_models.lenet import lenet5
 from .cifar10_models.shake_shake import shake_resnet26_2x96d,shake_resnet26_2x32d
-from .cifar100_models.resnet import resnet18_cifar100
+from .cifar100_models.resnet import resnet18_cifar100,wideresnet18_cifar100
 from .cifar100_models.vgg import vgg13_bn_cifar100
 from .cifar100_models.densenet import densenet121_cifar100
 from .cifar100_models.shake_shake import shake_resnet26_2x32d_cifar100
+from .cifar10_models.wideresnet import wideresnet28_20
+# ----------------
+# missing models in public codebase
+from .cifar10_models.resnet_cifar import resnet8_cf
+from .cifar10_models.efficientnet import efficientnet_b2,efficientnet_b1,efficientnet_b0
+from .cifar10_models.rff import rff_casregress_8000_mnist
+from .cifar100_models.vgg import vgg13_bn_cifar100
+from .cifar100_models.densenet import densenet121_cifar100
+from .cifar100_models.shake_shake import shake_resnet26_2x32d_cifar100
+
+# ----------------
+from .cifar10_models.shake_shake import shake_resnet26_2x96d,shake_resnet26_2x32d
+from .cifar100_models.resnet import resnet18_cifar100
 
 from .schduler import WarmupCosineLR
 from .layers import AttnComparison,PosEncodings,PosEncodingsSq,PosEncodingsSin
@@ -31,10 +43,10 @@ all_classifiers = {
     "wideresnet18_4":wideresnet18_4,
     "wideresnet18_4_grouplinear":wideresnet18_4_grouplinear,
     "wideresnet28_10":wideresnet28_10,
-    "resnet8_cifar":resnet8_cf,
     "resnet18": resnet18,
     "resnet34": resnet34,
     "resnet50": resnet50,
+    "resnet101": resnet101,
     "shake_26_32": shake_resnet26_2x32d,
     "shake_26_96": shake_resnet26_2x96d,
     "densenet121": densenet121,
@@ -43,6 +55,7 @@ all_classifiers = {
     "mobilenet_v2": mobilenet_v2,
     "googlenet": googlenet,
     "inception_v3": inception_v3,
+    "lenet5" : lenet5,
     "efficientnet_b2": efficientnet_b2,
     "efficientnet_b1":efficientnet_b1,
     "efficientnet_b0":efficientnet_b0,
@@ -53,6 +66,17 @@ all_classifiers = {
     "rff_100":rff_100_mnist,
     "rff_10000":rff_10000_mnist,
     "rff_100000":rff_100000_mnist
+    "wideresnet18_cifar100": wideresnet18_cifar100,
+    "wideresnet28_20" : wideresnet28_20,
+    # missing from public codebase
+    "resnet8_cifar": resnet8_cf,
+    #"efficientnet_b2": efficientnet_b2,
+    #"efficientnet_b1":efficientnet_b1,
+    #"efficientnet_b0":efficientnet_b0,
+    "resnet18_cifar100": resnet18_cifar100,
+    #"vgg13_cifar100": vgg13_bn_cifar100,
+    #"densenet121_cifar100": densenet121_cifar100,
+    #"shake_26_32_cifar100": shake_resnet26_2x32d_cifar100
 }
 
 all_regressors = {
@@ -62,9 +86,11 @@ all_regressors = {
         "linear_reg": linreg_wine,
         "rff_1000_casf": rff_casregress_1000_mnist,
         "rff_10000_casf": rff_casregress_10000_mnist,
-        "rff_8000_casf": rff_casregress_8000_mnist,
         "rff_100000_casf": rff_casregress_100000_mnist,
-        }
+        # missing from public codebase
+        # "rff_8000_casf": rff_casregress_8000_mnist,
+
+}
 
 class Regression_Models(pl.LightningModule):
     """Base class for regression models. 
@@ -108,6 +134,16 @@ class Regression_Models(pl.LightningModule):
                 "frequency":1,
                 "name": "learning_rate",
                 }
+        elif self.hparams.scheduler == "lambdalr":
+            scheduler = {
+                "scheduler": torch.optim.lr_scheduler.LambdaLR(optimizer,
+                                                          lambda epoch: 0.1 ** (epoch // 30)
+                                                              ),
+                "interval": "epoch",
+                "frequency": 1,
+                "name": "learning_rate",
+                }
+
         return scheduler    
 #####regression
 
@@ -389,6 +425,234 @@ class ClassasRegressionSingleModel(Regression_Models):
         scheduler = self.setup_scheduler(optimizer,total_steps)
         return [optimizer], [scheduler]
 
+
+class ClassasRegressionSingleModelOneHot(Regression_Models):
+    def __init__(self, hparams):
+        super().__init__(hparams)
+        print(hparams)
+        print(self.hparams)
+
+        self.acc = Accuracy()
+        self.num_classes = hparams.get('num_classes', 10)
+        self.model = all_classifiers[self.hparams.classifier](num_classes=self.num_classes)
+        self.criterion = MSELoss_classification(num_classes=self.num_classes)
+
+    def forward(self, batch):
+        images, labels = batch
+        predictions = self.model(images)
+        loss = self.criterion(predictions, labels)
+        acc = self.acc(predictions.max(1)[1], labels)
+        return loss, acc*100
+
+    def calibration(self,batch,use_softmax = False, store_split=False):
+        """Like forward, but just exit with the softmax predictions and labels. .
+        """
+        images, labels = batch
+        predictions = self.model(images)
+        return predictions,labels
+
+    def training_step(self, batch, batch_nb):
+        loss, acc = self.forward(batch)
+        self.log("loss/train", loss)
+        self.log("acc/train", acc)
+
+        lr = self.trainer.lr_schedulers[0]["scheduler"].get_last_lr()[-1]
+        self.log("lr/lr", lr)
+
+        return loss
+
+    def validation_step(self, batch, batch_nb):
+        loss, acc = self.forward(batch)
+        self.log("loss/val", loss)
+        self.log("acc/val", acc)
+
+    def test_step(self, batch, batch_nb):
+        loss, acc = self.forward(batch)
+        self.log("acc/test", acc)
+
+    def configure_optimizers(self):
+        optimizer = torch.optim.SGD(
+            self.model.parameters(),
+            lr=self.hparams.learning_rate,
+            weight_decay=self.hparams.weight_decay,
+            momentum=0.9,
+            nesterov=True,
+        )
+        total_steps = self.hparams.max_epochs * len(self.train_dataloader())
+        scheduler = self.setup_scheduler(optimizer,total_steps)
+        return [optimizer], [scheduler]
+
+
+class ClassasRegressionEnsembleModelOneHot(Regression_Models):
+    def __init__(self, hparams):
+        super().__init__(hparams)
+        self.nb_models = hparams.nb_models
+
+        self.accuracy = Accuracy()
+        self.num_classes = hparams.get('num_classes', 10)
+        self.criterion = MSELoss_classification(num_classes=self.num_classes)
+
+        self.models = torch.nn.ModuleList([all_classifiers[self.hparams.classifier](num_classes=self.num_classes) for i in range(
+            self.nb_models)])  ## now we add several different instances of the model.
+        # del self.model
+
+
+    def forward(self, batch):
+        """for forward, we want to take the softmax, aggregate the ensemble output, and then take the logit.
+
+        """
+        images, labels = batch
+        all_predictions = []
+        for m in self.models:
+            predictions = m(images)
+            all_predictions.append(predictions)
+        mean = torch.mean(torch.stack(all_predictions), dim=0)
+        ## we can pass this  through directly to the accuracy function.
+        tloss = self.criterion(mean, labels)
+        # accuracy = self.acc(mean, labels)
+        accuracy = self.accuracy(mean.max(1)[1], labels)
+        return tloss, accuracy*100
+
+    def calibration(self, batch, store_split=False):
+        """Like forward, but just exit with the predictions and labels. .
+        """
+        images, labels = batch
+
+        all_predictions = []
+        for m in self.models:
+            predictions = m(images)
+            all_predictions.append(predictions)
+        # gmean = torch.exp(torch.mean(torch.log(torch.stack(softmaxes)),dim = 0)) ## implementation from https://stackoverflow.com/questions/59722983/how-to-calculate-geometric-mean-in-a-differentiable-way
+        if store_split:
+            mean = torch.stack(all_predictions, 1)
+        else:
+            mean = torch.mean(torch.stack(all_predictions), dim=0)
+        return mean, labels
+
+
+    def training_step(self, batch, batch_nb):
+        """When we train, we want to train independently.
+        """
+
+        images, labels = batch
+        losses = []
+        accs = []
+        for m in self.models:
+            predictions = m(images)
+            mloss = self.criterion(predictions, labels)
+            accuracy = self.accuracy(predictions.max(1)[1], labels)
+            losses.append(mloss)
+            accs.append(accuracy)
+        loss = sum(losses) / self.nb_models  ## calculate the sum with pure python functions.
+        avg_accuracy = sum(accs) / self.nb_models
+
+        self.log("loss/train", loss)
+        self.log("acc/train", avg_accuracy)
+        return loss
+
+    def configure_optimizers(self):
+        optimizer = torch.optim.SGD(
+            self.models.parameters(),
+            # lr=self.hparams.learning_rate*len(self.models), ## when jointly training, we need to multiply the learning rate times the number of ensembles to make sure that the effective learning rate for each model stays the same.
+            lr=self.hparams.learning_rate,
+            ## when jointly training, we need to multiply the learning rate times the number of ensembles to make sure that the effective learning rate for each model stays the same.
+            weight_decay=self.hparams.weight_decay,
+            momentum=0.9,
+            nesterov=True,
+        )
+        total_steps = self.hparams.max_epochs * len(self.train_dataloader())
+        scheduler = self.setup_scheduler(optimizer, total_steps)
+        return [optimizer], [scheduler]
+
+    def setup_scheduler(self, optimizer, total_steps):
+        """Chooses between the cosine learning rate scheduler that came with the repo, or step scheduler based on wideresnet training.For the ensemble, we need to manually set the warmup and eta_min parameters to maintain the right scaling for individual models.
+        """
+        if self.hparams.scheduler in [None, "cosine"]:
+            scheduler = {
+                "scheduler": WarmupCosineLR(
+                    optimizer,
+                    warmup_epochs=total_steps * 0.3,
+                    max_epochs=total_steps,
+                    warmup_start_lr=1e-8,
+                    eta_min=1e-8
+                    # warmup_start_lr = 1e-8*len(self.models),
+                    # eta_min = 1e-8*len(self.models)
+                ),
+                "interval": "step",
+                "name": "learning_rate",
+            }
+        elif self.hparams.scheduler == "step":
+            scheduler = {
+                "scheduler": torch.optim.lr_scheduler.MultiStepLR(
+                    optimizer, milestones=[60, 120, 160], gamma=0.2, last_epoch=-1
+                ),
+                "interval": "epoch",
+                "frequency": 1,
+                "name": "learning_rate",
+            }
+        elif self.hparams.scheduler == "lambdalr":
+            scheduler = {
+                "scheduler": torch.optim.lr_scheduler.LambdaLR(optimizer,
+                                                          lambda epoch: 0.1 ** (epoch // 30)
+                ),
+                "interval": "epoch",
+                "frequency": 1,
+                "name": "learning_rate",
+                }
+
+        return scheduler
+
+
+class ClassasRegressionEnsembleJGAPModelOneHot(ClassasRegressionEnsembleModelOneHot):
+    """Formulation of the ensemble as a regularized single model with variable weight on regularization.
+
+    """
+
+    def __init__(self, hparams):
+        super().__init__(hparams)
+        self.traincriterion = MSELoss_classification(num_classes=self.num_classes)
+        self.gamma = hparams.gamma
+        self.jgap_weight = 1 # (self.nb_models - 1)/self.nb_models
+
+    def training_step(self, batch, batch_nb):
+        """When we train, we want to train independently.
+        Loss = NLL(log \bar{f}, y ) + gamma*JGAP(predictions, label)
+        JGAP = avg_sm_loss - mloss
+        """
+
+        images, labels = batch
+        losses = []
+        accs = []
+        softmaxes = []
+        for m in self.models:
+            # get logits
+            predictions = m(images)
+            softmaxes.append(predictions)
+            mloss = self.criterion(predictions, labels)
+            # accuracy = self.accuracy(predictions,labels)
+            losses.append(mloss)
+            # accs.append(accuracy)
+        logoutput = torch.mean(torch.stack(softmaxes), dim=0)
+        mloss = self.traincriterion(logoutput, labels)
+
+        # jensen gap
+        avg_sm_loss = sum(losses)/self.nb_models
+        jgaploss = avg_sm_loss - mloss
+
+        loss = (
+              mloss + self.jgap_weight * self.gamma * jgaploss)  ## with gamma equal to 1, this is the same as the standard ensemble training loss (independent).
+        accuracy = self.accuracy(logoutput.max(1)[1], labels)
+
+        lr = self.trainer.lr_schedulers[0]["scheduler"].get_last_lr()[-1]
+        self.log("lr/lr", lr)
+        self.log("loss/train", loss)
+        self.log("acc/train", accuracy * 100)
+        self.log("reg/mloss", mloss)
+        self.log("reg/jgap", jgaploss)
+        self.log("reg/avg_sm_loss", avg_sm_loss)
+        return loss
+
+
 class ClassasRegressionEnsembleModel(Regression_Models):
     def __init__(self,hparams):
         super().__init__(hparams)
@@ -661,7 +925,17 @@ class CIFAR10_Models(pl.LightningModule):
                 "frequency":1,
                 "name": "learning_rate",
                 }
-        return scheduler    
+        elif self.hparams.scheduler == "lambdalr":
+            scheduler = {
+                "scheduler": torch.optim.lr_scheduler.LambdaLR(optimizer,
+                                                          lambda epoch: 0.1 ** (epoch // 30)
+                ),
+                "interval": "epoch",
+                "frequency": 1,
+                "name": "learning_rate",
+                }
+
+        return scheduler
 
 class CIFAR10LinearGroupModule(CIFAR10_Models):
     """Replaces the final layer with a LogSoftmaxGroupLinear layer, and correspondingly changes the loss. 
@@ -719,11 +993,13 @@ class CIFAR10Module(CIFAR10_Models):
         super().__init__(hparams)
         print(hparams)
         print(self.hparams)
-
-        self.criterion = torch.nn.CrossEntropyLoss()
+        self.label_smoothing = self.hparams.get('label_smoothing', 0.0)
+        self.criterion = torch.nn.CrossEntropyLoss(label_smoothing=self.label_smoothing)
         self.accuracy = Accuracy()
 
-        self.model = all_classifiers[self.hparams.classifier]()
+        self.num_classes = hparams.get('num_classes', 10)
+        self.model = all_classifiers[self.hparams.classifier](
+            num_classes=self.num_classes)
 
     def forward(self, batch):
         images, labels = batch
@@ -748,6 +1024,10 @@ class CIFAR10Module(CIFAR10_Models):
         loss, accuracy = self.forward(batch)
         self.log("loss/train", loss)
         self.log("acc/train", accuracy)
+
+        lr = self.trainer.lr_schedulers[0]["scheduler"].get_last_lr()[-1]
+        self.log("lr/lr",lr)
+
         return loss
 
     def validation_step(self, batch, batch_nb):
@@ -772,22 +1052,26 @@ class CIFAR10Module(CIFAR10_Models):
         return [optimizer], [scheduler]
 
 class CIFAR10EnsembleModule(CIFAR10_Models):   
-    """Customized module to train an ensemble of models independently. Requires that  
+    """Customized module to train an ensemble of models independently
 
     """
     def __init__(self,hparams):
         super().__init__(hparams)
         self.nb_models = hparams.nb_models
 
-        self.criterion = torch.nn.CrossEntropyLoss()
+        self.label_smoothing = self.hparams.get('label_smoothing', 0.0)
+        self.criterion = torch.nn.CrossEntropyLoss(label_smoothing=self.label_smoothing)
+        self.fwd_criterion = torch.nn.NLLLoss()
         self.accuracy = Accuracy()
+        self.num_classes = hparams.get('num_classes', 10)
 
-        self.models = torch.nn.ModuleList([all_classifiers[self.hparams.classifier]() for i in range(self.nb_models)]) ## now we add several different instances of the model. 
+        self.models = torch.nn.ModuleList([all_classifiers[self.hparams.classifier](num_classes=self.num_classes) for i in range(self.nb_models)]) ## now we add several different instances of the model.
         #del self.model
     
     def forward(self,batch):
-        """for forward, we want to take the softmax, aggregate the ensemble output, and then take the logit.  
-
+        """for forward pass, we want to take the softmax,
+        aggregate the ensemble output, take log(\bar{f}) and apply NNLoss.
+        prediction  = \bar{f}
         """
         images, labels = batch
         softmax = torch.nn.Softmax(dim = 1)
@@ -800,12 +1084,13 @@ class CIFAR10EnsembleModule(CIFAR10_Models):
             normed = softmax(predictions)
             softmaxes.append(normed)
         mean = torch.mean(torch.stack(softmaxes),dim = 0) 
-        ## we can pass this  through directly to the accuracy function. 
-        tloss = self.criterion(mean,labels)## beware: this is a transformed input, don't evaluate on test loss of ensembles. 
+        ## we can pass this  through directly to the accuracy function.
+        logoutput = torch.log(mean)
+        tloss = self.fwd_criterion(logoutput,labels) ## beware: this is a transformed input, don't evaluate on test loss of ensembles.
         accuracy = self.accuracy(mean,labels)
         return tloss,accuracy*100
 
-    def calibration(self,batch):
+    def calibration(self,batch, store_split=False):
         """Like forward, but just exit with the predictions and labels. . 
         """
         images, labels = batch
@@ -819,11 +1104,16 @@ class CIFAR10EnsembleModule(CIFAR10_Models):
             normed = softmax(predictions)
             softmaxes.append(normed)
         #gmean = torch.exp(torch.mean(torch.log(torch.stack(softmaxes)),dim = 0)) ## implementation from https://stackoverflow.com/questions/59722983/how-to-calculate-geometric-mean-in-a-differentiable-way   
-        mean = torch.mean(torch.stack(softmaxes),dim = 0) 
+        if store_split:
+            mean = torch.stack(softmaxes, 1)
+        else:
+            mean = torch.mean(torch.stack(softmaxes),dim = 0)
         return mean,labels
 
     def training_step(self, batch, batch_nb):
-        """When we train, we want to train independently. 
+        """When we train, we want to train independently.
+        Loss is the  average single model loss
+        Loss = 1/M sum_i L( f_i, y), where f_i is the model output for the ith model.
         """
         
         images, labels = batch
@@ -881,20 +1171,33 @@ class CIFAR10EnsembleModule(CIFAR10_Models):
                 "frequency":1,
                 "name": "learning_rate",
                 }
+        elif self.hparams.scheduler == "lambdalr":
+            scheduler = {
+                "scheduler": torch.optim.lr_scheduler.LambdaLR(optimizer,
+                                                          lambda epoch: 0.1 ** (epoch // 30)
+                                                              ),
+                "interval": "epoch",
+                "frequency": 1,
+                "name": "learning_rate",
+                }
+
         return scheduler    
 
 class CIFAR10EnsembleDKLModule(CIFAR10EnsembleModule):
     """Formulation of the ensemble as a regularized single model with variable weight on regularization. 
-
+    Note: label_smoothing does not act on regularizer.
+    For full label smoothing use CIFAR10EnsembleJGAPModule
     """
     def __init__(self,hparams):
         super().__init__(hparams)
-        self.traincriterion = torch.nn.NLLLoss()
+        self.traincriterion = NLLLoss_label_smooth(self.num_classes, self.label_smoothing)
         self.kl = Model_D_KL("torch")
         self.gamma = hparams.gamma
 
     def training_step(self, batch, batch_nb):
         """When we train, we want to train independently. 
+        Loss = NLL(log \bar{f}, y ) + gamma*DKL(softmaxes, label)
+        where DKL= 1/M sum_i^M [log (1/M) - log ((f_i^{(y)})/(\sum_i^M f_i^{(y)}))]
         """
         softmax = torch.nn.Softmax(dim = 1)
         
@@ -903,13 +1206,14 @@ class CIFAR10EnsembleDKLModule(CIFAR10EnsembleModule):
         accs = []
         softmaxes = []
         for m in self.models:
-            predictions = m(images) ## this just a bunch of unnormalized scores? 
+            # get logits
+            predictions = m(images)
             normed = softmax(predictions)
             softmaxes.append(normed)
             #mloss = self.criterion(predictions, labels)
             #accuracy = self.accuracy(predictions,labels)
             #losses.append(mloss)
-            #accs.append(accuracy) 
+            #accs.append(accuracy)
         logoutput = torch.log(torch.mean(torch.stack(softmaxes),dim = 0))
         mloss = self.traincriterion(logoutput, labels)
         dklloss = torch.mean(self.kl.kl(softmaxes,labels))
@@ -921,6 +1225,8 @@ class CIFAR10EnsembleDKLModule(CIFAR10EnsembleModule):
         self.log("loss/train", loss)
         self.log("acc/train", accuracy*100)
         self.log("reg/dkl",dklloss)
+        self.log("reg/mloss", mloss)
+
         return loss
 
     def configure_optimizers(self):
@@ -962,7 +1268,240 @@ class CIFAR10EnsembleDKLModule(CIFAR10EnsembleModule):
                 "frequency":1,
                 "name": "learning_rate",
                 }
-        return scheduler    
+        return scheduler
+
+
+class CIFAR10EnsembleJGAPModule(CIFAR10EnsembleModule):
+    """Formulation of the ensemble as a regularized single model with variable weight on regularization.
+
+    """
+
+    def __init__(self, hparams):
+        super().__init__(hparams)
+
+        self.traincriterion = NLLLoss_label_smooth(self.num_classes, self.label_smoothing)
+        self.gamma = hparams.gamma
+
+    def training_step(self, batch, batch_nb):
+        """When we train, we want to train independently.
+        Loss = NLL(log \bar{f}, y ) + gamma*JGAP(softmaxes, label)
+        JGAP = 1/M sum_i^M CE(f_i,y) - NLL(log \bar{f}, y )
+        """
+        softmax = torch.nn.Softmax(dim=1)
+
+        images, labels = batch
+        losses = []
+        accs = []
+        softmaxes = []
+        for m in self.models:
+            # get logits
+            predictions = m(images)
+            normed = softmax(predictions)
+            softmaxes.append(normed)
+            mloss = self.criterion(predictions, labels)
+            # accuracy = self.accuracy(predictions,labels)
+            losses.append(mloss)
+            # accs.append(accuracy)
+        logoutput = torch.log(torch.mean(torch.stack(softmaxes), dim=0))
+        mloss = self.traincriterion(logoutput, labels)
+
+        # jensen gap
+        avg_sm_loss = sum(losses)/self.nb_models
+        jgaploss = avg_sm_loss - mloss
+
+        loss = (
+              mloss + self.gamma * jgaploss)  ## with gamma equal to 1, this is the same as the standard ensemble training loss (independent).
+        accuracy = self.accuracy(logoutput, labels)
+
+        lr = self.trainer.lr_schedulers[0]["scheduler"].get_last_lr()[-1]
+        self.log("lr/lr", lr)
+        self.log("loss/train", loss)
+        self.log("acc/train", accuracy * 100)
+        self.log("reg/mloss", mloss)
+        self.log("reg/jgap", jgaploss)
+        self.log("reg/avg_sm_loss", avg_sm_loss)
+        return loss
+
+    def configure_optimizers(self):
+        optimizer = torch.optim.SGD(
+            self.models.parameters(),
+            lr=self.hparams.learning_rate,
+            ## when jointly training, we need to multiply the learning rate times the number of ensembles to make sure that the effective learning rate for each model stays the same.
+            # lr=self.hparams.learning_rate*len(self.models), ## when jointly training, we need to multiply the learning rate times the number of ensembles to make sure that the effective learning rate for each model stays the same.
+            weight_decay=self.hparams.weight_decay,
+            momentum=0.9,
+            nesterov=True,
+        )
+        total_steps = self.hparams.max_epochs * len(self.train_dataloader())
+        scheduler = self.setup_scheduler(optimizer, total_steps)
+        return [optimizer], [scheduler]
+
+    def setup_scheduler(self, optimizer, total_steps):
+        """Chooses between the cosine learning rate scheduler that came with the repo, or step scheduler based on wideresnet training.For the ensemble, we need to manually set the warmup and eta_min parameters to maintain the right scaling for individual models.
+        """
+        if self.hparams.scheduler in [None, "cosine"]:
+            scheduler = {
+                "scheduler": WarmupCosineLR(
+                    optimizer,
+                    warmup_epochs=total_steps * 0.3,
+                    max_epochs=total_steps,
+                    # warmup_start_lr = 1e-8*len(self.models),
+                    # eta_min = 1e-8*len(self.models)
+                    warmup_start_lr=1e-8,
+                    eta_min=1e-8
+                ),
+                "interval": "step",
+                "name": "learning_rate",
+            }
+        elif self.hparams.scheduler == "step":
+            scheduler = {
+                "scheduler": torch.optim.lr_scheduler.MultiStepLR(
+                    optimizer, milestones=[60, 120, 160], gamma=0.2, last_epoch=-1
+                ),
+                "interval": "epoch",
+                "frequency": 1,
+                "name": "learning_rate",
+            }
+        elif self.hparams.scheduler == "lambdalr":
+            scheduler = {
+                "scheduler": torch.optim.lr_scheduler.LambdaLR(optimizer,
+                                                          lambda epoch: 0.1 ** (epoch // 30)
+                                                              ),
+                "interval": "epoch",
+                "frequency": 1,
+                "name": "learning_rate",
+                }
+
+        return scheduler
+
+
+class CIFAR10EnsembleJGAPLModule(CIFAR10EnsembleModule):
+    """Formulation of the ensemble as a regularized single model with variable weight on regularization.
+
+    """
+
+    def __init__(self, hparams):
+        super().__init__(hparams)
+        self.gamma = hparams.gamma
+
+    def training_step(self, batch, batch_nb):
+        """When we train, we want to train independently.
+        Loss =  CE(\bar{f}, y) + gamma*JGAP(logits, label)
+        JGAP = 1/M sum_i^M CE(f_i,y) - CE(\bar{f}, y)
+        where f are logits.
+        """
+        softmax = torch.nn.Softmax(dim=1)
+
+        images, labels = batch
+        losses = []
+        accs = []
+        softmaxes = []
+        for m in self.models:
+            # get logits
+            predictions = m(images)
+            softmaxes.append(predictions)
+            mloss = self.criterion(predictions, labels)
+            # accuracy = self.accuracy(predictions,labels)
+            losses.append(mloss)
+            # accs.append(accuracy)
+        outputs = torch.mean(torch.stack(softmaxes), dim=0)
+        mloss = self.criterion(outputs, labels)
+
+        # jensen gap
+        avg_sm_loss = sum(losses)/self.nb_models
+        jgaploss = avg_sm_loss - mloss
+
+        loss = (
+              mloss + self.gamma * jgaploss)  ## with gamma equal to 1, this is the same as the standard ensemble training loss (independent).
+        accuracy = self.accuracy(outputs, labels)
+
+        lr = self.trainer.lr_schedulers[0]["scheduler"].get_last_lr()[-1]
+        self.log("lr/lr", lr)
+        self.log("loss/train", loss)
+        self.log("acc/train", accuracy * 100)
+        self.log("reg/mloss", mloss)
+        self.log("reg/jgap", jgaploss)
+        self.log("reg/avg_sm_loss", avg_sm_loss)
+        return loss
+
+    def calibration(self,batch):
+        """Like forward, but just exit with the predictions and labels. .
+        """
+        images, labels = batch
+        softmax = torch.nn.Softmax(dim = 1)
+
+        losses = []
+        accs = []
+        softmaxes = []
+        for m in self.models:
+            predictions = m(images)
+            softmaxes.append(predictions)
+        #gmean = torch.exp(torch.mean(torch.log(torch.stack(softmaxes)),dim = 0)) ## implementation from https://stackoverflow.com/questions/59722983/how-to-calculate-geometric-mean-in-a-differentiable-way
+        mean = torch.mean(torch.stack(softmaxes),dim = 0)
+        mean = softmax(mean)
+        return mean, labels
+
+    def forward(self, batch):
+        """for forward pass, we want to take the average the predictions
+
+        """
+        images, labels = batch
+        softmax = torch.nn.Softmax(dim=1)
+
+        losses = []
+        accs = []
+        softmaxes = []
+        for m in self.models:
+            predictions = m(images)
+            softmaxes.append(predictions)
+        mean = torch.mean(torch.stack(softmaxes), dim=0)
+        ## we can pass this  through directly to the accuracy function.
+        tloss = self.criterion(mean, labels)
+        accuracy = self.accuracy(mean, labels)
+        return tloss, accuracy * 100
+
+    def configure_optimizers(self):
+        optimizer = torch.optim.SGD(
+            self.models.parameters(),
+            lr=self.hparams.learning_rate,
+            ## when jointly training, we need to multiply the learning rate times the number of ensembles to make sure that the effective learning rate for each model stays the same.
+            # lr=self.hparams.learning_rate*len(self.models), ## when jointly training, we need to multiply the learning rate times the number of ensembles to make sure that the effective learning rate for each model stays the same.
+            weight_decay=self.hparams.weight_decay,
+            momentum=0.9,
+            nesterov=True,
+        )
+        total_steps = self.hparams.max_epochs * len(self.train_dataloader())
+        scheduler = self.setup_scheduler(optimizer, total_steps)
+        return [optimizer], [scheduler]
+
+    def setup_scheduler(self, optimizer, total_steps):
+        """Chooses between the cosine learning rate scheduler that came with the repo, or step scheduler based on wideresnet training.For the ensemble, we need to manually set the warmup and eta_min parameters to maintain the right scaling for individual models.
+        """
+        if self.hparams.scheduler in [None, "cosine"]:
+            scheduler = {
+                "scheduler": WarmupCosineLR(
+                    optimizer,
+                    warmup_epochs=total_steps * 0.3,
+                    max_epochs=total_steps,
+                    # warmup_start_lr = 1e-8*len(self.models),
+                    # eta_min = 1e-8*len(self.models)
+                    warmup_start_lr=1e-8,
+                    eta_min=1e-8
+                ),
+                "interval": "step",
+                "name": "learning_rate",
+            }
+        elif self.hparams.scheduler == "step":
+            scheduler = {
+                "scheduler": torch.optim.lr_scheduler.MultiStepLR(
+                    optimizer, milestones=[60, 120, 160], gamma=0.2, last_epoch=-1
+                ),
+                "interval": "epoch",
+                "frequency": 1,
+                "name": "learning_rate",
+            }
+        return scheduler
+
 
 class CIFAR10EnsemblePAC2BModule(CIFAR10EnsembleModule):
     """Customized module to train with PAC2B loss from ortega et al. 
@@ -1111,7 +1650,13 @@ class CIFAR10EnsembleDKL_Avg_Module(CIFAR10EnsembleModule):
         self.gamma = hparams.gamma
 
     def training_step(self, batch, batch_nb):
-        """When we train, we want to train independently. 
+        """When we train, we want to train independently.
+        Loss = 1/M sum_i CE(f_i, y) + gamma * DKL
+        where
+        DKL = DKL(\bar{f}, f_i) = 1/M sum_j KL(\bar{f}, f_j)
+        implemented as 1/M \sum_{m=1}^M \sum_c=1^{C} \bar{f}_{b,c} * (\log(\bar{f}_{b,c}) - \log(f_{m, b, c}))
+        where \bar{f} is B x C, and f is M x B x C
+        and f_i are the probabilities (not logits).
         """
         softmax = torch.nn.Softmax(dim = 1)
         
@@ -1491,3 +2036,37 @@ class CIFAR10InterEnsembleModule(CIFAR10_Models):
         scheduler = self.setup_scheduler(optimizer,total_steps)
         return [optimizer], [scheduler]
 
+class NLLLoss_label_smooth(torch.nn.Module):
+    def __init__(self, num_classes, label_smoothing=0.1):
+        super(NLLLoss_label_smooth, self).__init__()
+        self.negative = label_smoothing / (num_classes - 1)
+        self.positive = (1 - label_smoothing)
+
+    def forward(self, log_softmax, target):
+        true_dist = torch.zeros_like(log_softmax)
+        true_dist.fill_(self.negative)
+        true_dist.scatter_(1, target.data.unsqueeze(1), self.positive)
+        return torch.sum(-true_dist * log_softmax, dim=1).mean()
+
+
+def mse_loss_classification(predictions, labels_onehot):
+    """
+    MSE loss for classification as (1) in https://arxiv.org/pdf/2006.07322.pdf.
+    :return: loss, float
+    """
+    loss = torch.pow(predictions - labels_onehot, 2).mean(1).mean(0)
+    return loss
+
+
+class MSELoss_classification(torch.nn.Module):
+    """ Class to compute MSE loss for classification
+
+    """
+    def __init__(self, num_classes):
+        self.num_classes = num_classes
+        super(MSELoss_classification, self).__init__()
+
+    def forward(self, predictions, labels):
+        labels_onehot = torch.nn.functional.one_hot(labels, self.num_classes).to(torch.float32)
+        loss = mse_loss_classification(predictions, labels_onehot)
+        return loss

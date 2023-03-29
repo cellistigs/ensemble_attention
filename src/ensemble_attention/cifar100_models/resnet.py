@@ -319,7 +319,7 @@ class WideResNet(nn.Module):
         self,
         block,
         layers,
-        num_classes=10,
+        num_classes=100,
         zero_init_residual=False,
         groups=1,
         width_per_group=64,
@@ -951,6 +951,16 @@ def widesubresnet18(baseresnet, index, pretrained=False, progress=True, device="
 
     return _widesubresnet(
         "wideresnet18", BasicBlock, [2, 2, 2, 2], pretrained, progress, device, k = 2, baseresnet = baseresnet, indices = indices[index], **kwargs
+    )
+
+def wideresnet18_cifar100(pretrained=False, progress=True, device="cpu", **kwargs):
+    """Constructs a wide (4x) ResNet-18 model with grouping of linear output channels.
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
+    """
+    return _wideresnet(
+        "wideresnet18", BasicBlock, [2, 2, 2, 2], pretrained, progress, device, k = 2, **kwargs
     )
 
 def wideresnet18_4_grouplinear(pretrained=False, progress=True, device="cpu", **kwargs):

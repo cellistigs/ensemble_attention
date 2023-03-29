@@ -142,7 +142,7 @@ def vgg11_bn(pretrained=False, progress=True, device="cpu", **kwargs):
     return _vgg("vgg11_bn", "A", True, pretrained, progress, device, **kwargs)
 
 
-def vgg13_bn(pretrained=False, progress=True, device="cpu", **kwargs):
+def vgg13_bn_cifar100(pretrained=False, progress=True, device="cpu", **kwargs):
     """VGG 13-layer model (configuration "B") with batch normalization
 
     Args:

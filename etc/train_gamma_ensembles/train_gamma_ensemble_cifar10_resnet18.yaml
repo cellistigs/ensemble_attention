@@ -9,7 +9,7 @@ parameters:
   data_dir:
     value: /home/ekellbuch/pytorch_datasets/cifar10_ood/data
   gamma:
-    values: [0, 0.1, 2, 4]
+    values: [1]
   max_epochs:
     value: 100
   logger:
@@ -19,7 +19,7 @@ parameters:
   module:
     value: 'ensemble_dkl'
   accelerator:
-    value: 'ddp'
+    value: 'dp'
   gpus:
     value: 1
 
