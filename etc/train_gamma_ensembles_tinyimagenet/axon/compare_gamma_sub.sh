@@ -24,19 +24,18 @@ config_name="run_default_gpu_tinyimagenet"
 num_workers=4
 fi
 
-max_epochs=100
+max_epochs=200
 logger="wandb"
 
 module="ensemble_jgap"
-classifier="resnet18"
 label_smoothing=0
+resnet_stride=2
 
-
-for classifier in "resnet18"
+for classifier in "resnet34"
 do
 for seed in 0
 do
-for gamma in {0.0,0.2,0.5,1.0,1.2,1.5,2.0};
+for gamma in {1.0,0.5,0.0,0.2,1.2,1.5,2.0};
 do
 call_train "--config-name="${config_name}" \
   data_dir=${dataset_dir}  \
@@ -48,8 +47,10 @@ call_train "--config-name="${config_name}" \
   gamma=${gamma} \
   seed=${seed} \
   classifier=${classifier} \
+  resnet_stride=${resnet_stride} \
 
   "
+  sleep 1m # sleep for 1 minute
 done
 done
 done

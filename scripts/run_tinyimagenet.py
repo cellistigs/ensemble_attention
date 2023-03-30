@@ -16,18 +16,26 @@ from ensemble_attention.module import CIFAR10Module,CIFAR10EnsembleModule,\
     CIFAR10EnsembleDKL_Avg_Module, CIFAR10EnsembleJGAPModule, CIFAR10EnsembleJGAPLModule
 # from ensemble_attention.callback import Check_GradNorm
 from pytorch_lightning.plugins import ddp_plugin
+from omegaconf import DictConfig, OmegaConf
 
 from cifar10_ood.data import CIFAR10Data,CIFAR10_1Data,CINIC10_Data,CIFAR10_CData
 from ensemble_attention.data import TinyImagenetData
-from ensemble_attention.module_imagenet import TinyImagenetModule, TinyImagenetEnsembleModule, TinyImagenetEnsembleJGAPModule
+from ensemble_attention.module_imagenet import TinyImagenetModule, TinyImagenetEnsembleModule, \
+TinyImagenetEnsembleJGAPModule, TinyImagenetEnsembleDKLModule, TinyImagenetEnsemblePAC2BModule, \
+TinyImagenetEnsembleJS_Unif_Module,TinyImagenetEnsembleJS_Avg_Module
+
 modules = {
         "base":CIFAR10Module,
         "base_tinyimagenet":TinyImagenetModule,
         "ensemble":CIFAR10EnsembleModule,  # train time ensemble
         "ensemble_tinyimagenet":TinyImagenetEnsembleModule,  # train time ensemble
         #"ensemble_dkl":CIFAR10EnsembleDKLModule,  #jgap ensemble with kl divergence
-        "ensemble_jgap":CIFAR10EnsembleJGAPModule,  #jgap ensemble with jgap
-        "ensemble_jgap_tinyimagenet":TinyImagenetEnsembleJGAPModule,  #jgap ensemble with jgap
+        "ensemble_jgap":CIFAR10EnsembleJGAPModule,  #jgap ensemble with jgap with cifar10 models.
+        "ensemble_jgap_tinyimagenet":TinyImagenetEnsembleJGAPModule,  #jgap ensemble with imagenet models.
+        "ensemble_dkl_tinyimagenet":TinyImagenetEnsembleDKLModule,  #jgap ensemble with imagenet models.
+        "ensemble_var_tinyimagenet":TinyImagenetEnsemblePAC2BModule,  #jgap ensemble with imagenet models.
+        "ensemble_js_unif_tinyimagenet":TinyImagenetEnsembleJS_Unif_Module,  #jgap ensemble with imagenet models.
+        "ensemble_js_avg_tinyimagenet":TinyImagenetEnsembleJS_Avg_Module,  #jgap ensemble with imagenet models.
         #"ensemble_jgapl":CIFAR10EnsembleJGAPLModule,  #jgap ensemble with jgap w logit averaging.
         #"ensemble_p2b":CIFAR10EnsemblePAC2BModule,  # Ortega ensemble*
         #"ensemble_js_unif":CIFAR10EnsembleJS_Unif_Module,  # co-training ensemble*
@@ -198,12 +206,14 @@ def main(args):
         elif args.module == "attention":    
             model = modules[args.module].load_from_checkpoint(checkpoint_path=args.checkpoint,hparams = args)
         ## Really should be the case for anything
-        else:    
-            model = modules[args.module].load_from_checkpoint(checkpoint_path=args.checkpoint,hparams = args)
-    else: ## if training from scratch or loading from state dict:    
+        else:
+            #model = modules[args.module].load_from_checkpoint(checkpoint_path=args.checkpoint,hparams = args)
+            ckpt = torch.load(args.checkpoint)
+            model = modules[args.module](**all_args)
+            model.load_state_dict(ckpt["state_dict"])
+    else: ## if training from scratch or loading from state dict:
         model = modules[args.module](**all_args)
         ## if loading from state dictionary instead of checkpoint: 
-        """
         if bool(args.pretrained):
             if args.pretrained_path is None:
                 state_dict = os.path.join(
@@ -213,7 +223,7 @@ def main(args):
             else:     
                 state_dict = args.pretrained_path
             model.model.load_state_dict(torch.load(state_dict))
-        """
+
     ## what dataset should we evaluate on?
     cifar10data = TinyImagenetData(args)
     # import pdb ; pdb.set_trace()

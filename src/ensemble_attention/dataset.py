@@ -7,7 +7,7 @@ import pytorch_lightning as pl
 import requests
 from torch.utils.data import Dataset,DataLoader,Subset
 import torch
-from torchvision.transforms import ToTensor
+from torchvision.transforms import ToTensor,Compose,Normalize
 from torchvision.datasets import MNIST
 from tqdm import tqdm 
 import pandas as pd
@@ -89,7 +89,51 @@ class MNISTModule(pl.LightningDataModule):
         self.hparams = args
         self.mnist_predict = MNIST(self.hparams.data_dir,train = False,transform=ToTensor(),target_transform=OneHotTransform(num_classes=10),download = True)
         self.mnist_train = MNIST(self.hparams.data_dir,train = True,transform =ToTensor(),target_transform=OneHotTransform(num_classes=10),download =True)
-    def train_dataloader(self,shuffle = False,aug = False):
+    def train_dataloader(self,shuffle = True,aug = False):
+        return DataLoader(self.mnist_train,
+            batch_size=self.hparams.batch_size,
+            num_workers=self.hparams.num_workers,
+            drop_last=False,
+            pin_memory=True,
+            shuffle = shuffle)
+    def val_dataloader(self):
+        return DataLoader(self.mnist_predict,
+            batch_size=self.hparams.batch_size,
+            num_workers=self.hparams.num_workers,
+            drop_last=False,
+            pin_memory=True,)
+    def test_dataloader(self):
+        return self.val_dataloader()
+
+class MNISTModule_class(pl.LightningDataModule):
+    def __init__(self,args):
+        super().__init__()
+        self.hparams = args
+        self.mnist_predict = MNIST(self.hparams.data_dir,train = False,transform=ToTensor(),download = True)
+        self.mnist_train = MNIST(self.hparams.data_dir,train = True,transform =ToTensor(),download =True)
+    def train_dataloader(self,shuffle = True,aug = False):
+        return DataLoader(self.mnist_train,
+            batch_size=self.hparams.batch_size,
+            num_workers=self.hparams.num_workers,
+            drop_last=False,
+            pin_memory=True,
+            shuffle = shuffle)
+    def val_dataloader(self):
+        return DataLoader(self.mnist_predict,
+            batch_size=self.hparams.batch_size,
+            num_workers=self.hparams.num_workers,
+            drop_last=False,
+            pin_memory=True,)
+    def test_dataloader(self):
+        return self.val_dataloader()
+class MNIST10000Module_class(pl.LightningDataModule):
+    def __init__(self,args):
+        super().__init__()
+        self.hparams = args
+        self.mnist_predict = MNIST(self.hparams.data_dir,train =
+                False,transform=Compose([ToTensor(),Normalize((0.1307,),(0.3081))]),download = True)
+        self.mnist_train = Subset(MNIST(self.hparams.data_dir,train = True,transform=Compose([ToTensor(),Normalize((0.1307,),(0.3081))]),download=True),np.arange(10000))
+    def train_dataloader(self,shuffle = True,aug = False):
         return DataLoader(self.mnist_train,
             batch_size=self.hparams.batch_size,
             num_workers=self.hparams.num_workers,

@@ -17,6 +17,22 @@ class RFF_Projection(nn.Module):
     def forward(self,x):    
         return torch.cos(torch.matmul(x,self.weights.T)+self.offset)
 
+class RFF_img(nn.Module): 
+    """Random Fourier Features module for images.
+
+    """
+    def __init__(self,input_size,project_size,output_size,sigma = 1):
+        super().__init__()
+        self.project = RFF_Projection(input_size,project_size,sigma) 
+        self.regress = nn.Linear(project_size,output_size) 
+        self.sigma = sigma
+
+    def forward(self,x):    
+        x = nn.flatten(x) 
+        proj = self.project(x)
+        out = self.regress(proj)
+        return out
+
 class RFF(nn.Module): 
     """Random Fourier Features module.
 
@@ -56,6 +72,13 @@ def rff_regress_10000_wine():
 def rff_regress_100000_wine():    
     return RFF(11,100000,1)
 
+def rff_100_mnist():    
+    return RFF_img(784,100,10)
+def rff_10000_mnist():    
+    return RFF_img(784,10000,10)
+def rff_100000_mnist():    
+    return RFF_img(784,100000,10)
+
 def rff_casregress_1000_mnist():    
     return RFF(784,1000,10)
 
@@ -64,3 +87,6 @@ def rff_casregress_10000_mnist():
 
 def rff_casregress_100000_mnist():    
     return RFF(784,100000,10)
+
+def rff_casregress_8000_mnist():    
+    return RFF(784,8000,10)
