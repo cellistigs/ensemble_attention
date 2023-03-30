@@ -130,6 +130,11 @@ class ImagenetData(pl.LightningDataModule):
     else:
       transform = transforms.Compose(
         [
+          #--------------------------
+          # included to make all images the same size and match val set.
+          transforms.Resize(256),
+          transforms.CenterCrop(224),
+          #--------------------------
           transforms.ToTensor(),
           transforms.Normalize(self.mean, self.std),
         ]
