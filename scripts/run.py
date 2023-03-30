@@ -16,7 +16,7 @@ from ensemble_attention.callback import Check_GradNorm
 from pytorch_lightning.plugins import ddp_plugin
 
 from cifar10_ood.data import CIFAR10Data,CIFAR10_1Data,CINIC10_Data,CIFAR10_CData,CIFAR100Data
-from ensemble_attention.dataset import WineDataModule,MNISTModule
+from ensemble_attention.dataset import WineDataModule,MNISTModule,MNIST10000Module
 
 
 modules = {"base":CIFAR10Module,
@@ -213,6 +213,8 @@ def main(args):
         ind_data = WineDataModule(args)
     elif args.test_set == "mnist":    
         ind_data = MNISTModule(args)
+    elif args.test_set == "mnist10000":    
+        ind_data = MNIST10000Module(args)
     elif args.test_set == "CIFAR100":    
         ind_data = CIFAR100Data(args)
 
