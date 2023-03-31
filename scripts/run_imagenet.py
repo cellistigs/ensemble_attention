@@ -12,7 +12,7 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import WandbLogger, TensorBoardLogger
 #from ensemble_attention.module import CIFAR10Module,CIFAR10EnsembleModule
 
-from ensemble_attention.callback import Check_GradNorm
+from ensemble_attention.callback import Check_GradNorm, GradNormCallbackSplit
 from pytorch_lightning.plugins import ddp_plugin
 from omegaconf import DictConfig, OmegaConf
 
@@ -176,7 +176,7 @@ def main(args):
             trainerargs['plugins'] = [ddp_plugin.DDPPlugin(find_unused_parameters=False)]
 
     if args.callbacks:
-        trainer = Trainer(**trainerargs,callbacks = [Check_GradNorm()])
+        trainer = Trainer(**trainerargs,callbacks = [Check_GradNorm(), GradNormCallbackSplit()])
     else:
         trainer = Trainer(**trainerargs)
 

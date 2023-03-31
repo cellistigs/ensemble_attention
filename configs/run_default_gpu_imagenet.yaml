@@ -42,7 +42,7 @@ gpu_id: "0"
 
 label_smoothing: 0
 
-callbacks: 0 ## whether to use callbacks to debug.
+callbacks: 1 ## whether to use callbacks to debug.
 random_eval: 0
 
 
