@@ -176,7 +176,7 @@ def main(args):
             trainerargs['plugins'] = [ddp_plugin.DDPPlugin(find_unused_parameters=False)]
 
     if args.callbacks:
-        trainer = Trainer(**trainerargs,callbacks = [Check_GradNorm(), GradNormCallbackSplit()])
+        trainer = Trainer(**trainerargs,callbacks = [GradNormCallbackSplit()])
     else:
         trainer = Trainer(**trainerargs)
 
