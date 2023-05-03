@@ -31,7 +31,6 @@ max_epochs: 90
 learning_rate: 0.1
 weight_decay: 1e-4  
 scheduler: lambdalr
-augment_train: 1  ## imagenet flag whether to augment training data or not
 
 auto_lr_find: 0
 
