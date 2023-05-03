@@ -25,14 +25,17 @@ class TinyImagenetData(pl.LightningDataModule):
     else:
       self.set_targets_eval_ind = None
 
+    # flag to augment train sometimes
+    if args.get('augment_train', True):
+      self.noaugment_train = args.get('noaugment_train', True)
 
-  def train_dataloader(self ,shuffle = True ,aug=True):
+  def train_dataloader(self, shuffle=True, aug=True):
     """added optional shuffle parameter for generating random labels.
     added optional aug parameter to apply augmentation or not.
 
     Note: preprocessing is different for imagenet vs cifar10 models.
     """
-    if aug is True:
+    if aug is True and self.augment_train:
       transform = transforms.Compose(
         [
           #transforms.Resize(256),
