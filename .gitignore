@@ -1,3 +1,4 @@
+etc/
 *.DS_Store*
 etc/*/outputs/*
 src/ensemble_attention.egg-info/*
