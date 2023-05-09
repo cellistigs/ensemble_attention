@@ -1,4 +1,11 @@
+*.DS_Store*
+etc/*/outputs/*
+src/ensemble_attention.egg-info/*
 scripts/outputs/*
 models/*
 src/ensemble_attention/__pycache__/*
 src/ensemble_attention/cifar10_models/__pycache__/*
+/outputs/
+notebooks/.ipynb_checkpoints/*
+etc/notebooks/*ipynb_checkpoints/*
+*.pyc
