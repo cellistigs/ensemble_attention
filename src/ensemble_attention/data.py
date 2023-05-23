@@ -25,8 +25,7 @@ class TinyImagenetData(pl.LightningDataModule):
     else:
       self.set_targets_eval_ind = None
 
-
-  def train_dataloader(self ,shuffle = True ,aug=True):
+  def train_dataloader(self, shuffle=True, aug=True):
     """added optional shuffle parameter for generating random labels.
     added optional aug parameter to apply augmentation or not.
 
@@ -130,6 +129,11 @@ class ImagenetData(pl.LightningDataModule):
     else:
       transform = transforms.Compose(
         [
+          #--------------------------
+          # included to make all images the same size and match val set.
+          transforms.Resize(256),
+          transforms.CenterCrop(224),
+          #--------------------------
           transforms.ToTensor(),
           transforms.Normalize(self.mean, self.std),
         ]

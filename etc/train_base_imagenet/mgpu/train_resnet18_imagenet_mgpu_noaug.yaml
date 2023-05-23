@@ -1,0 +1,44 @@
+project: imagenet_base_resnet18
+program: ../../../scripts/run_imagenet.py
+method: grid
+
+metric:
+  name: loss/val
+  goal: minimize
+parameters:
+  data_dir:
+    value : ${oc.env:HOME}/pytorch_datasets/imagenet
+  accelerator:
+    value: 'ddp'
+  gpus:
+    value: 4
+  gamma:
+    value: 1
+  max_epochs:
+    value: 1
+  logger:
+    value: 'wandb'
+  num_workers:
+    value: 32
+  module:
+    value: 'ensemble_dkl_imagenet'
+  learning_rate:
+    value: 1e-1
+  weight_decay:
+    value: 1e-4
+  classifier:
+    value: 'resnet18'
+  batch_size:
+    value: 256
+  nb_models:
+    value: 3
+  augment_train:
+    value: 0
+
+command:
+  - ${env}
+  - python
+  - ${program}
+  - "--config-name"
+  - "run_default_gpu_imagenet"
+  - ${args_no_hyphens}

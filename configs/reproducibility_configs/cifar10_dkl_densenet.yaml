@@ -1,0 +1,256 @@
+title: "CIFAR 10, DenseNet121 DKL"
+line_extent: 0.45
+colormap: True
+models: 
+  DKL_gamma_0: 
+    logits: True
+    modelnames: 
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_0_gamma_0_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_1_gamma_0_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_2_gamma_0_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_3_gamma_0_densenet121_ind_preds.npy"
+    labelpaths: 
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+  DKL_gamma_0.1: 
+    logits: True
+    modelnames: 
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_0_gamma_0.1_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_1_gamma_0.1_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_2_gamma_0.1_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_3_gamma_0.1_densenet121_ind_preds.npy"
+    labelpaths: 
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+  DKL_gamma_0.2: 
+    logits: True
+    modelnames: 
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_0_gamma_0.2_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_1_gamma_0.2_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_2_gamma_0.2_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_3_gamma_0.2_densenet121_ind_preds.npy"
+    labelpaths: 
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+  DKL_gamma_0.5: 
+    logits: True
+    modelnames: 
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_0_gamma_0.5_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_1_gamma_0.5_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_2_gamma_0.5_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_3_gamma_0.5_densenet121_ind_preds.npy"
+    labelpaths: 
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+  DKL_gamma_0.8: 
+    logits: True
+    modelnames: 
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_0_gamma_0.8_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_1_gamma_0.8_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_2_gamma_0.8_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_3_gamma_0.8_densenet121_ind_preds.npy"
+    labelpaths: 
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+  DKL_gamma_1: 
+    logits: True
+    modelnames: 
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_0_gamma_1_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_1_gamma_1_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_2_gamma_1_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_3_gamma_1_densenet121_ind_preds.npy"
+    labelpaths: 
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+  ResNet18: 
+    logits: True
+    modelnames: 
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_0_gamma_1_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_1_gamma_1_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_2_gamma_1_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_3_gamma_1_densenet121_ind_preds.npy"
+    labelpaths: 
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+  DKL_gamma_1.1: 
+    logits: True
+    modelnames: 
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_0_gamma_1.1_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_1_gamma_1.1_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_2_gamma_1.1_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_3_gamma_1.1_densenet121_ind_preds.npy"
+    labelpaths: 
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+  DKL_gamma_1.2: 
+    logits: True
+    modelnames: 
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_0_gamma_1.2_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_1_gamma_1.2_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_2_gamma_1.2_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_3_gamma_1.2_densenet121_ind_preds.npy"
+    labelpaths: 
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+  DKL_gamma_1.3: 
+    logits: True
+    modelnames: 
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_0_gamma_1.3_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_1_gamma_1.3_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_2_gamma_1.3_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_3_gamma_1.3_densenet121_ind_preds.npy"
+    labelpaths: 
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+  DKL_gamma_1.4: 
+    logits: True
+    modelnames: 
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_0_gamma_1.4_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_1_gamma_1.4_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_2_gamma_1.4_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_3_gamma_1.4_densenet121_ind_preds.npy"
+    labelpaths: 
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+  DKL_gamma_1.45: 
+    logits: True
+    modelnames: 
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_0_gamma_1.45_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_1_gamma_1.45_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_2_gamma_1.45_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_3_gamma_1.45_densenet121_ind_preds.npy"
+    labelpaths: 
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+  DKL_gamma_1.5: 
+    logits: True
+    modelnames: 
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_0_gamma_1.5_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_1_gamma_1.5_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_2_gamma_1.5_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_3_gamma_1.5_densenet121_ind_preds.npy"
+    labelpaths: 
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+  DKL_gamma_1.55: 
+    logits: True
+    modelnames: 
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_0_gamma_1.55_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_1_gamma_1.55_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_2_gamma_1.55_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_3_gamma_1.55_densenet121_ind_preds.npy"
+    labelpaths: 
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+  DKL_gamma_1.6: 
+    logits: True
+    modelnames: 
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_0_gamma_1.6_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_1_gamma_1.6_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_2_gamma_1.6_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_3_gamma_1.6_densenet121_ind_preds.npy"
+    labelpaths: 
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+  DKL_gamma_1.65: 
+    logits: True
+    modelnames: 
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_0_gamma_1.65_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_1_gamma_1.65_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_2_gamma_1.65_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_3_gamma_1.65_densenet121_ind_preds.npy"
+    labelpaths: 
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+  DKL_gamma_1.7: 
+    logits: True
+    modelnames: 
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_0_gamma_1.7_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_1_gamma_1.7_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_2_gamma_1.7_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_3_gamma_1.7_densenet121_ind_preds.npy"
+    labelpaths: 
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+  DKL_gamma_1.8: 
+    logits: True
+    modelnames: 
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_0_gamma_1.8_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_1_gamma_1.8_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_2_gamma_1.8_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_3_gamma_1.8_densenet121_ind_preds.npy"
+    labelpaths: 
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+  DKL_gamma_2: 
+    logits: True
+    modelnames: 
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_0_gamma_2_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_1_gamma_2_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_2_gamma_2_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_3_gamma_2_densenet121_ind_preds.npy"
+    labelpaths: 
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+  DKL_gamma_3: 
+    logits: True
+    modelnames: 
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_0_gamma_3_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_1_gamma_3_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_2_gamma_3_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_3_gamma_3_densenet121_ind_preds.npy"
+    labelpaths: 
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+  DKL_gamma_5: 
+    logits: True
+    modelnames: 
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_0_gamma_5_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_1_gamma_5_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_2_gamma_5_densenet121_ind_preds.npy"
+      - "../../ensemble_attention/results/dkl_indiv/ensemble_dkl_model_3_gamma_5_densenet121_ind_preds.npy"
+    labelpaths: 
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
+      - "../results/robust_results11-15-21_02:46.11_base_resnet18ind_labels.npy"
