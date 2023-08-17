@@ -72,8 +72,22 @@ def rff_regress_10000_wine():
 def rff_regress_100000_wine():    
     return RFF(11,100000,1)
 
+def rff_50_mnist():    
+    return RFF_img(784,50,10)
 def rff_100_mnist():    
     return RFF_img(784,100,10)
+def rff_150_mnist():    
+    return RFF_img(784,150,10)
+def rff_190_mnist():    
+    return RFF_img(784,190,10)
+def rff_200_mnist():    
+    return RFF_img(784,200,10)
+def rff_210_mnist():    
+    return RFF_img(784,210,10)
+def rff_250_mnist():    
+    return RFF_img(784,250,10)
+def rff_300_mnist():    
+    return RFF_img(784,300,10)
 def rff_10000_mnist():    
     return RFF_img(784,10000,10)
 def rff_100000_mnist():    
