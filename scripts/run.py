@@ -28,9 +28,9 @@ from ensemble_attention.module import CIFAR10Module,CIFAR10EnsembleModule,\
 from ensemble_attention.callback import GradNormCallbackSplit, GradNormCallback
 from pytorch_lightning.plugins import ddp_plugin
 
-from ensemble_attention.dataset import WineDataModule,MNISTModule,MNISTModule_class
-from cifar10_ood.data import CIFAR10Data,CIFAR10_BagData,CIFAR10_1Data,CINIC10_Data,CIFAR10_CData, CIFAR100Data, CIFAR100CoarseData
+from ensemble_attention.dataset import WineDataModule,MNISTModule,MNISTModule_class,MNIST10000Module
 
+from cifar10_ood.data import CIFAR10Data,CIFAR10_BagData,CIFAR10_1Data,CINIC10_Data,CIFAR10_CData, CIFAR100Data, CIFAR100CoarseData
 
 modules = {"base":CIFAR10Module,
         "ensemble":CIFAR10EnsembleModule,  # train time ensemble
@@ -245,7 +245,10 @@ def main(args):
     elif args.test_set == "wine":    
         ind_data = WineDataModule(args)
     elif args.test_set == "mnist":    
-        ind_data = MNISTModule_class(args)
+        ind_data = MNISTModule(args)
+    elif args.test_set == "mnist10000":    
+        ind_data = MNIST10000Module(args)
+        #ind_data = MNISTModule_class(args)
     elif args.test_set == "CIFAR100":    
         ind_data = CIFAR100Data(args)
     elif args.test_set == "CIFAR100Coarse":
