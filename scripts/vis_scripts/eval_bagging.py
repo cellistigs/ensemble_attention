@@ -7,6 +7,9 @@ import matplotlib.pyplot as plt
 
 here = os.path.abspath(os.path.dirname(__file__))
 datadir = os.path.join(os.path.dirname(here),"outputs/2023-03-29")
+output_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)),"vis_figures")
+base_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)),"../../")
+plt.style.use(os.path.join(here,"../../etc/config/stylesheet.mplstyle"))
 
 labels = ""
 standard_resnet8s = [
