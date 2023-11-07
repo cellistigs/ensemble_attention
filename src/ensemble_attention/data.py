@@ -2,10 +2,55 @@ import pytorch_lightning as pl
 import numpy as np
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
+from ensemble_attention.dataset import AdultDataset
 import torchvision.datasets as datasets
 import torch
 import os
 
+
+class AdultData(pl.LightningDataModule):
+    def __init__(self,args):
+        super().__init__()
+        self.hparams = args
+    def train_dataloader(self, shuffle = True):    
+        train_dataset = AdultDataset(
+          self.hparams.data_dir,
+          transform=self.hparams.tab_transform,
+          train = True
+        )
+
+        if self.set_targets_train is not None:
+          raise NotImplementedError('custom train targets NA')
+
+        dataloader = DataLoader(
+          train_dataset,
+          batch_size=self.hparams.batch_size,
+          num_workers=self.hparams.num_workers,
+          shuffle=shuffle,
+          drop_last=False,
+          #pin_memory=True,
+        )
+        return dataloader
+
+    def test_dataloader(self, shuffle = False):    
+        test_dataset = AdultDataset(
+          self.hparams.data_dir,
+          transform=self.hparams.tab_transform,
+          train = False
+        )
+
+        if self.set_targets_train is not None:
+          raise NotImplementedError('custom train targets NA')
+
+        dataloader = DataLoader(
+          test_dataset,
+          batch_size=self.hparams.batch_size,
+          num_workers=self.hparams.num_workers,
+          shuffle=shuffle,
+          drop_last=False,
+          #pin_memory=True,
+        )
+        return dataloader
 
 class TinyImagenetData(pl.LightningDataModule):
   def __init__(self, args):
@@ -179,3 +224,9 @@ class ImagenetData(pl.LightningDataModule):
 
   def test_dataloader(self):
     return self.val_dataloader()
+
+class AdultData(pl.LightningDataModule):
+    def __init__(self, args):
+        super().__init__()
+        self.hparams = args
+
