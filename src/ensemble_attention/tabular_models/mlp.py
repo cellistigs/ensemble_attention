@@ -59,7 +59,8 @@ class MLP(nn.module):
         x = x.squeeze(-1)
         return x
 
-
+def MLP_Adult(d_layers,d_embedding):
+    return MLP(6,d_layers,2,[7,16,7,14,6,5,2,41],d_embedding)
 
 
 

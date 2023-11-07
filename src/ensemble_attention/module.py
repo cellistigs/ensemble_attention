@@ -29,7 +29,7 @@ from .cifar100_models.shake_shake import shake_resnet26_2x32d_cifar100
 # ----------------
 from .cifar10_models.shake_shake import shake_resnet26_2x96d,shake_resnet26_2x32d
 from .cifar100_models.resnet import resnet18_cifar100
-from .tabular_models.mlp import MLP
+from .tabular_models.mlp import MLP_Adult
 
 from .schduler import WarmupCosineLR
 from .layers import AttnComparison,PosEncodings,PosEncodingsSq,PosEncodingsSin
@@ -101,7 +101,7 @@ all_regressors = {
 }
 
 all_tabular = {
-        "mlp_tabular": mlp}
+        "mlp_tabular": MLP_Adult}
 
 class Tabular_Models(pl.LightningModule):
     """Base class for tabular models. 
@@ -134,7 +134,7 @@ class TabularSingleModel(Tabular_Models):
         self.criterion = torch.nn.CrossEntropyLoss()
         self.acc = Accuracy()
 
-        self.model = all_tabular[self.hparams.classifier]()
+        self.model = all_tabular[self.hparams.classifier](self.hparams.tabular.d_layers,self.hparams.tabular.d_embedding)
 
     def forward(self, batch):
         numeric, categorical, labels = batch
