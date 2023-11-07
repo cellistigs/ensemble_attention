@@ -149,6 +149,31 @@ class MNIST10000Module_class(pl.LightningDataModule):
     def test_dataloader(self):
         return self.val_dataloader()
 
+class MNIST5000Module_class(pl.LightningDataModule):
+    """Just select 5000 training examples, and test on 10000.
+    """
+    def __init__(self,args):
+        super().__init__()
+        self.hparams = args
+        self.mnist_predict = MNIST(self.hparams.data_dir,train =
+                False,transform=Compose([ToTensor(),Normalize((0.1307,),(0.3081))]),download = True)
+        self.mnist_train = Subset(MNIST(self.hparams.data_dir,train =
+            True,transform=Compose([ToTensor(),Normalize((0.1307,),(0.3081))]),download=True),np.random.permutation(np.arange(60000))[:5000])
+    def train_dataloader(self,shuffle = True,aug = False):
+        return DataLoader(self.mnist_train,
+            batch_size=self.hparams.batch_size,
+            num_workers=self.hparams.num_workers,
+            drop_last=False,
+            pin_memory=True,
+            shuffle = shuffle)
+    def val_dataloader(self):
+        return DataLoader(self.mnist_predict,
+            batch_size=self.hparams.batch_size,
+            num_workers=self.hparams.num_workers,
+            drop_last=False,
+            pin_memory=True,)
+    def test_dataloader(self):
+        return self.val_dataloader()
 class MNIST10000Module(pl.LightningDataModule):
     def __init__(self,args):
         super().__init__()
