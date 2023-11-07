@@ -19,7 +19,7 @@ from ensemble_attention.module import CIFAR10Module,CIFAR10EnsembleModule,\
     CIFAR10EnsembleDKL_Avg_Module, CIFAR10EnsembleJGAPModule, CIFAR10EnsembleJGAPLModule, \
     RegressionSingleModel, RegressionEnsembleModel, RegressionEnsemble_JGModel, \
     ClassasRegressionSingleModel,ClassasRegressionEnsembleModel, ClassasRegressionEnsemble_JGModel, \
-    ClassasRegressionSingleModelOneHot, ClassasRegressionEnsembleModelOneHot, ClassasRegressionEnsembleJGAPModelOneHot
+    ClassasRegressionSingleModelOneHot, ClassasRegressionEnsembleModelOneHot, ClassasRegressionEnsembleJGAPModelOneHot, TabularSingleModel
 
 #from ensemble_attention.module import CIFAR100Module,CIFAR100EnsembleModule,CIFAR100EnsembleDKLModule, \
 #    CIFAR100EnsemblePAC2BModule,CIFAR100EnsembleJS_Unif_Module,CIFAR100EnsembleJS_Avg_Module
@@ -53,6 +53,7 @@ modules = {"base":CIFAR10Module,
         "casregress_onehot":ClassasRegressionSingleModelOneHot,
         "casregress_ensemble_onehot":ClassasRegressionEnsembleModelOneHot,
         "casregress_ensemble_jgap_onehot":ClassasRegressionEnsembleJGAPModelOneHot,
+        "tabular":TabularSingleModel,
         #"base_100":CIFAR100Module,
         #"ensemble_100":CIFAR100EnsembleModule,  # train time ensemble
         #"ensemble_dkl_100":CIFAR100EnsembleDKLModule,  #jgap ensemble

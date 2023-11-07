@@ -29,6 +29,7 @@ from .cifar100_models.shake_shake import shake_resnet26_2x32d_cifar100
 # ----------------
 from .cifar10_models.shake_shake import shake_resnet26_2x96d,shake_resnet26_2x32d
 from .cifar100_models.resnet import resnet18_cifar100
+from .tabular_models.mlp import MLP_Adult
 
 from .schduler import WarmupCosineLR
 from .layers import AttnComparison,PosEncodings,PosEncodingsSq,PosEncodingsSin
@@ -98,6 +99,79 @@ all_regressors = {
         # "rff_8000_casf": rff_casregress_8000_mnist,
 
 }
+
+all_tabular = {
+        "mlp_tabular": MLP_Adult}
+
+class Tabular_Models(pl.LightningModule):
+    """Base class for tabular models. 
+
+    """
+    def __init__(self,hparams):
+        super().__init__()
+        self.hparams = hparams
+    def forward(x):    
+        raise NotImplementedError
+    def training_step():
+        raise NotImplementedError
+
+    def validation_step(self, batch, batch_nb):
+        loss, accuracy = self.forward(batch)
+        self.log("loss/val", loss)
+        self.log("acc/val", accuracy)
+
+    def test_step(self, batch, batch_nb):
+        loss, accuracy = self.forward(batch)
+        self.log("acc/test", accuracy)
+
+
+class TabularSingleModel(Tabular_Models):
+    def __init__(self, hparams):
+        super().__init__(hparams)
+        print(hparams)
+        print(self.hparams)
+
+        self.criterion = torch.nn.CrossEntropyLoss()
+        self.acc = Accuracy()
+
+        self.model = all_tabular[self.hparams.classifier](self.hparams.tabular.d_layers,self.hparams.tabular.d_embedding)
+
+    def forward(self, batch):
+        numeric, categorical, labels = batch
+        predictions = self.model(numeric,categorical)
+        loss = self.criterion(predictions, labels)
+        acc = self.acc(predictions, labels)
+        return loss, acc 
+
+    def calibration(self,batch,use_softmax = True):
+        """Like forward, but just exit with the softmax predictions and labels. . 
+        """
+        numeric, categorical, labels = batch
+        predictions = self.model(numeric,categorical)
+        return predictions,labels
+
+    def training_step(self, batch, batch_nb):
+        loss, acc = self.forward(batch)
+        self.log("loss/train", loss)
+        self.log("acc/train", acc)
+        return loss
+
+    def validation_step(self, batch, batch_nb):
+        loss, acc = self.forward(batch)
+        self.log("loss/val", loss)
+        self.log("acc/val", acc)
+
+    def test_step(self, batch, batch_nb):
+        loss, acc = self.forward(batch)
+        self.log("acc/test", acc)
+
+    def configure_optimizers(self):
+        optimizer = torch.optim.AdamW(
+            self.model.parameters(),
+            lr=self.hparams.learning_rate,
+            weight_decay=self.hparams.weight_decay,
+        )
+        return optimizer
 
 class Regression_Models(pl.LightningModule):
     """Base class for regression models. 

@@ -5,12 +5,79 @@ from PIL import Image
 import numpy as np 
 import pytorch_lightning as pl
 import requests
+import sklearn.preprocessing
 from torch.utils.data import Dataset,DataLoader,Subset
 import torch
 from torchvision.transforms import ToTensor,Compose,Normalize
 from torchvision.datasets import MNIST
 from tqdm import tqdm 
 import pandas as pd
+
+class AdultDataset(Dataset):
+    def __init__(self,root_dir, transform = None,target_transform = None, seed = 0, test_size = 10000, train = False):
+        self.seed = seed
+        numerical_features = ["age","fnlwgt","educational-num","capital-gain","capital-loss","hours-per-week"]
+        categorical_features = ["workclass","education","marital-status","occupation","relationship","race","gender","native-country"]
+        target = "income"
+        if seed is not None: 
+            np.random.seed(seed)
+        self.root_dir = root_dir    
+        self.raw_data = pd.read_csv(os.path.join(root_dir,"adult.csv"),na_values ="?").dropna() ## remove datapoints with nan values. 
+        num_data = self.raw_data[numerical_features].values
+        cat_data = self.raw_data[categorical_features].values
+        targets = self.raw_data[target].values==">50K" ## transform to binary. 
+        self.transform = transform
+        self.target_transform = target_transform
+
+        # Determine data split to use. 
+        indices = np.random.permutation(range(len(self.raw_data)))
+        test_indices = indices[:test_size]
+        train_indices = indices[test_size:]
+        train_features = num_data[train_indices,:],cat_data[train_indices,:]
+        train_targets = targets[train_indices]
+
+        ## get normalization 
+        if transform is None:
+            self.normalizer = self.get_normalizer(train_features[0])
+        else:
+            self.normalizer = self.get_normalizer(train_features[0],normtype = transform)
+
+        if train == False:
+            self.features = num_data[test_indices,:],cat_data[test_indices,:]
+            self.targets = targets[test_indices]
+        else:
+            self.features = train_features
+            self.targets = train_targets
+
+        self.cat_sizes = [len(np.unique(di)) for di in cat_data.T]
+
+    def get_normalizer(self,traindata,normtype="standard"):
+        """Normalizes numerical data according standard scaling or quantile transform.
+
+        """
+        if normtype == "standard":
+            normalizer = sklearn.preprocessing.StandardScaler()
+        elif normtype == "quantile":
+            normalizer = sklearn.preprocessing.QuantileTransformer(
+                    output_distribution="normal",
+                    n_quantiles = max(min(traindata.shape[0] // 30, 1000),10),
+                    subsample=int(1e9),
+                    random_state = self.seed
+                    )
+        else:
+            raise NotImplementedError("transform given is {}".format(normtype))
+        normalizer.fit(traindata)
+        return normalizer
+
+    def __len__(self):
+        return len(self.features[0])
+
+    def __getitem__(self,idx):
+        num,cat,target = self.features[0][idx],self.features[1][idx],self.targets[idx]
+        num = self.normalizer.transform(num)
+        if self.target_transform:
+            target = self.target_transform(target)
+        return num,cat,target
 
 class WineDataset(Dataset):
     def __init__(self,root_dir,transform =None,target_transform = None,seed = 0,test_size = 1000,color = None,train = False):
