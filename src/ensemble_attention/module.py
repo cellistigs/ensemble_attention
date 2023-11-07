@@ -63,14 +63,14 @@ all_classifiers = {
     "vgg13_cifar100": vgg13_bn_cifar100,
     "densenet121_cifar100": densenet121_cifar100,
     "shake_26_32_cifar100": shake_resnet26_2x32d_cifar100,
-    "rff_50":rff_50_mnist,
-    "rff_100":rff_100_mnist,
-    "rff_150":rff_150_mnist,
-    "rff_190":rff_190_mnist,
-    "rff_200":rff_200_mnist,
-    "rff_210":rff_210_mnist,
-    "rff_250":rff_250_mnist,
-    "rff_300":rff_300_mnist,
+    "rff_50_mnist":rff_50_mnist,
+    "rff_100_mnist":rff_100_mnist,
+    "rff_150_mnist":rff_150_mnist,
+    "rff_190_mnist":rff_190_mnist,
+    "rff_200_mnist":rff_200_mnist,
+    "rff_210_mnist":rff_210_mnist,
+    "rff_250_mnist":rff_250_mnist,
+    "rff_300_mnist":rff_300_mnist,
     "rff_10000":rff_10000_mnist,
     "rff_100000":rff_100000_mnist,
     "wideresnet18_cifar100": wideresnet18_cifar100,
@@ -1072,8 +1072,11 @@ class CIFAR10EnsembleModule(CIFAR10_Models):
         self.accuracy = Accuracy()
         self.num_classes = hparams.get('num_classes', 10)
 
-        self.models = torch.nn.ModuleList([all_classifiers[self.hparams.classifier](num_classes=self.num_classes) for i in range(self.nb_models)]) ## now we add several different instances of the model.
+        try:
+            self.models = torch.nn.ModuleList([all_classifiers[self.hparams.classifier](num_classes=self.num_classes) for i in range(self.nb_models)]) ## now we add several different instances of the model.
         #del self.model
+        except TypeError:
+            self.models = torch.nn.ModuleList([all_classifiers[self.hparams.classifier]() for i in range(self.nb_models)]) ## now we add several different instances of the model.
     
     def forward(self,batch):
         """for forward pass, we want to take the softmax,

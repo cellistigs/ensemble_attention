@@ -158,7 +158,7 @@ class MNIST5000Module_class(pl.LightningDataModule):
         self.mnist_predict = MNIST(self.hparams.data_dir,train =
                 False,transform=Compose([ToTensor(),Normalize((0.1307,),(0.3081))]),download = True)
         self.mnist_train = Subset(MNIST(self.hparams.data_dir,train =
-            True,transform=Compose([ToTensor(),Normalize((0.1307,),(0.3081))]),download=True),np.random.permutation(np.arange(60000))[:5000])
+            True,transform=Compose([ToTensor(),Normalize((0.1307,),(0.3081))]),download=True),np.arange(5000))
     def train_dataloader(self,shuffle = True,aug = False):
         return DataLoader(self.mnist_train,
             batch_size=self.hparams.batch_size,

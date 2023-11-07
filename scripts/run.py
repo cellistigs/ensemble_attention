@@ -28,7 +28,7 @@ from ensemble_attention.module import CIFAR10Module,CIFAR10EnsembleModule,\
 from ensemble_attention.callback import GradNormCallbackSplit, GradNormCallback
 from pytorch_lightning.plugins import ddp_plugin
 
-from ensemble_attention.dataset import WineDataModule,MNISTModule,MNISTModule_class,MNIST10000Module
+from ensemble_attention.dataset import WineDataModule,MNISTModule,MNISTModule_class,MNIST10000Module,MNIST5000Module_class
 
 from cifar10_ood.data import CIFAR10Data,CIFAR10_BagData,CIFAR10_1Data,CINIC10_Data,CIFAR10_CData, CIFAR100Data, CIFAR100CoarseData
 
@@ -246,6 +246,8 @@ def main(args):
         ind_data = WineDataModule(args)
     elif args.test_set == "mnist":    
         ind_data = MNISTModule(args)
+    elif args.test_set == "mnist_5000":    
+        ind_data = MNIST5000Module_class(args)
     elif args.test_set == "mnist10000":    
         ind_data = MNIST10000Module(args)
         #ind_data = MNISTModule_class(args)
