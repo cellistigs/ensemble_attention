@@ -13,9 +13,17 @@ from torchvision.datasets import MNIST
 from tqdm import tqdm 
 import pandas as pd
 
+def replace_with_indices(df):
+    df_mapped = df.copy()
+    for column in df.columns:
+        mapping = {value: index for index, value in enumerate(df[column].unique())}
+        df_mapped[column] = df[column].map(mapping)
+    return df_mapped
+
 class AdultDataset(Dataset):
     def __init__(self,root_dir, transform = None,target_transform = None, seed = 0, test_size = 10000, train = False):
         self.seed = seed
+        self.tensorize = Compose([ToTensor()])
         numerical_features = ["age","fnlwgt","educational-num","capital-gain","capital-loss","hours-per-week"]
         categorical_features = ["workclass","education","marital-status","occupation","relationship","race","gender","native-country"]
         target = "income"
@@ -24,7 +32,11 @@ class AdultDataset(Dataset):
         self.root_dir = root_dir    
         self.raw_data = pd.read_csv(os.path.join(root_dir,"adult.csv"),na_values ="?").dropna() ## remove datapoints with nan values. 
         num_data = self.raw_data[numerical_features].values
-        cat_data = self.raw_data[categorical_features].values
+        ## now convert category labels to indices. 
+        cat_data = replace_with_indices(self.raw_data[categorical_features])
+        
+        self.cat_sizes = [len(np.unique(di)) for di in cat_data.T]
+
         targets = self.raw_data[target].values==">50K" ## transform to binary. 
         self.transform = transform
         self.target_transform = target_transform
@@ -49,7 +61,6 @@ class AdultDataset(Dataset):
             self.features = train_features
             self.targets = train_targets
 
-        self.cat_sizes = [len(np.unique(di)) for di in cat_data.T]
 
     def get_normalizer(self,traindata,normtype="standard"):
         """Normalizes numerical data according standard scaling or quantile transform.
@@ -74,10 +85,14 @@ class AdultDataset(Dataset):
 
     def __getitem__(self,idx):
         num,cat,target = self.features[0][idx],self.features[1][idx],self.targets[idx]
+        if len(np.shape(num)) == 1:
+            num = num.reshape(1,-1)
+        if len(np.shape(cat)) == 1:    
+            cat = cat.reshape(1,-1)
         num = self.normalizer.transform(num)
         if self.target_transform:
             target = self.target_transform(target)
-        return num,cat,target
+        return self.tensorize(num),self.tensorize(cat),self.tensorize(target)
 
 class WineDataset(Dataset):
     def __init__(self,root_dir,transform =None,target_transform = None,seed = 0,test_size = 1000,color = None,train = False):
