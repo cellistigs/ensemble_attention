@@ -33,11 +33,11 @@ class AdultDataset(Dataset):
         self.raw_data = pd.read_csv(os.path.join(root_dir,"adult.csv"),na_values ="?").dropna() ## remove datapoints with nan values. 
         num_data = self.raw_data[numerical_features].values
         ## now convert category labels to indices. 
-        cat_data = replace_with_indices(self.raw_data[categorical_features])
+        cat_data = replace_with_indices(self.raw_data[categorical_features]).values
         
         self.cat_sizes = [len(np.unique(di)) for di in cat_data.T]
 
-        targets = self.raw_data[target].values==">50K" ## transform to binary. 
+        targets = (self.raw_data[target].values==">50K").astype(int) ## transform to binary. 
         self.transform = transform
         self.target_transform = target_transform
 
@@ -83,16 +83,15 @@ class AdultDataset(Dataset):
     def __len__(self):
         return len(self.features[0])
 
-    def __getitem__(self,idx):
-        num,cat,target = self.features[0][idx],self.features[1][idx],self.targets[idx]
+    def __getitem__(self, idx):
+        num, cat, target = self.features[0][idx], self.features[1][idx], self.targets[idx]
         if len(np.shape(num)) == 1:
-            num = num.reshape(1,-1)
-        if len(np.shape(cat)) == 1:    
-            cat = cat.reshape(1,-1)
-        num = self.normalizer.transform(num)
+            num = num.reshape(1, -1)
+        num = self.normalizer.transform(num).squeeze()
         if self.target_transform:
             target = self.target_transform(target)
-        return self.tensorize(num),self.tensorize(cat),self.tensorize(target)
+            
+        return torch.from_numpy(num).float(), torch.from_numpy(cat).int(), target 
 
 class WineDataset(Dataset):
     def __init__(self,root_dir,transform =None,target_transform = None,seed = 0,test_size = 1000,color = None,train = False):
