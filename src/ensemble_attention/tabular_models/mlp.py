@@ -1,11 +1,12 @@
 """Much of this code is used to implement models from https://arxiv.org/pdf/2106.11959.pdf, with implementation details taken from https://github.com/yandex-research/tabular-dl-revisiting-models/blob/main/bin/mlp.py 
 """
 import torch
+import torch.nn.functional as F
 import torch.nn as nn
 import math
 import os 
 
-class MLP(nn.module):
+class MLP(nn.Module):
     """MLP that takes both categorical and numerical data as input. We separate out the number of numerical inputs from the categorical, which we keep track of separately. 
     We assume numerical data is normalized, and we embed all categorical features in the same space. 
     :param d_in: number of numerical input dimensions
@@ -37,13 +38,13 @@ class MLP(nn.module):
                     for i, x in enumerate(d_layers)
                 ]
             )
-        self.dropout = dropout
+        self.dropout = 0 
         self.head = nn.Linear(d_layers[-1] if d_layers else d_in, d_out)
 
     def forward(self, x_num, x_cat):
         x = []
         if x_num is not None:
-            x.append(x_num)
+            x.append(x_num.float())
         if x_cat is not None:
             x.append(
                     self.category_embeddings(x_cat + self.category_offsets[None]).view(x_cat.size(0),-1) # add offsets to categorical data, then embed this into higher dimensional space. 
