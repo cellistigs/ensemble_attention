@@ -134,7 +134,8 @@ class TabularSingleModel(Tabular_Models):
         self.criterion = torch.nn.CrossEntropyLoss()
         self.acc = Accuracy()
 
-        self.model = all_tabular[self.hparams.classifier](self.hparams.tabular.d_layers,self.hparams.tabular.d_embedding)
+        d_layers = [self.hparams.tabular.layer_size for i in range(self.hparams.tabular.n_layers)]
+        self.model = all_tabular[self.hparams.classifier](d_layers,self.hparams.tabular.d_embedding,self.hparams.tabular.dropout)
 
     def forward(self, batch):
         numeric, categorical, labels = batch

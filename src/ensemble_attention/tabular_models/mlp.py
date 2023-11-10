@@ -22,7 +22,8 @@ class MLP(nn.Module):
             d_layers,
             d_out,
             categories,
-            d_embedding
+            d_embedding,
+            dropout
             ):
         super().__init__()
         if categories is not None: 
@@ -38,7 +39,7 @@ class MLP(nn.Module):
                     for i, x in enumerate(d_layers)
                 ]
             )
-        self.dropout = 0 
+        self.dropout = dropout 
         self.head = nn.Linear(d_layers[-1] if d_layers else d_in, d_out)
 
     def forward(self, x_num, x_cat):
