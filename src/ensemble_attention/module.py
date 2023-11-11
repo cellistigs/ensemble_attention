@@ -124,7 +124,6 @@ class Tabular_Models(pl.LightningModule):
         loss, accuracy = self.forward(batch)
         self.log("acc/test", accuracy)
 
-
 class TabularSingleModel(Tabular_Models):
     def __init__(self, hparams):
         super().__init__(hparams)
@@ -157,15 +156,6 @@ class TabularSingleModel(Tabular_Models):
         self.log("acc/train", acc)
         return loss
 
-    def validation_step(self, batch, batch_nb):
-        loss, acc = self.forward(batch)
-        self.log("loss/val", loss)
-        self.log("acc/val", acc)
-
-    def test_step(self, batch, batch_nb):
-        loss, acc = self.forward(batch)
-        self.log("acc/test", acc)
-
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(
             self.model.parameters(),
@@ -173,6 +163,185 @@ class TabularSingleModel(Tabular_Models):
             weight_decay=self.hparams.weight_decay,
         )
         return optimizer
+
+class TabularEnsembleModel(Tabular_Models):
+    def __init__(self, hparams):
+        super().__init__(hparams)
+        self.nb_models = hparams.nb_models
+
+        self.criterion = torch.nn.CrossEntropyLoss()
+        self.fwd_criterion = torch.nn.NLLLoss()
+        self.accuracy = Accuracy()
+        d_layers = [self.hparams.tabular.layer_size for i in range(self.hparams.tabular.n_layers)]
+
+        self.models = torch.nn.ModuleList([all_tabular[self.hparams.classifier](d_layers,self.hparams.tabular.d_embedding,self.hparams.tabular.dropout) for i in range(self.nb_models)]) ## now we add several different instances of the model.
+
+    def forward(self,batch):
+        """for forward pass, we want to take the softmax,
+        aggregate the ensemble output, take log(\bar{f}) and apply NNLoss.
+        prediction  = \bar{f}
+        """
+        numerical, categorical, labels = batch
+        softmax = torch.nn.Softmax(dim = 1)
+
+        losses = []
+        accs = []
+        softmaxes = []
+        for m in self.models:
+            predictions = m(numerical,categorical)
+            normed = softmax(predictions)
+            softmaxes.append(normed)
+        mean = torch.mean(torch.stack(softmaxes),dim = 0) 
+        ## we can pass this  through directly to the accuracy function.
+        logoutput = torch.log(mean)
+        tloss = self.fwd_criterion(logoutput,labels) ## beware: this is a transformed input, don't evaluate on test loss of ensembles.
+        accuracy = self.accuracy(mean,labels)
+        return tloss,accuracy*100
+
+    def calibration(self,batch, store_split=False):
+        """Like forward, but just exit with the predictions and labels. . 
+        """
+        numerical, categorical, labels = batch
+        softmax = torch.nn.Softmax(dim = 1)
+
+        losses = []
+        accs = []
+        softmaxes = []
+        for m in self.models:
+            predictions = m(numerical,categorical)
+            normed = softmax(predictions)
+            softmaxes.append(normed)
+        #gmean = torch.exp(torch.mean(torch.log(torch.stack(softmaxes)),dim = 0)) ## implementation from https://stackoverflow.com/questions/59722983/how-to-calculate-geometric-mean-in-a-differentiable-way   
+        if store_split:
+            mean = torch.stack(softmaxes, 1)
+        else:
+            mean = torch.mean(torch.stack(softmaxes),dim = 0)
+        return mean,labels
+
+    def training_step(self, batch, batch_nb):
+        """When we train, we want to train independently.
+        Loss is the  average single model loss
+        Loss = 1/M sum_i L( f_i, y), where f_i is the model output for the ith model.
+        """
+        
+        numerical, categorical, labels = batch
+        losses = []
+        accs = []
+        for m in self.models:
+            predictions = m(numerical, categorical) ## this just a bunch of unnormalized scores? 
+            mloss = self.criterion(predictions, labels)
+            accuracy = self.accuracy(predictions,labels)
+            losses.append(mloss)
+            accs.append(accuracy) 
+        loss = sum(losses)/self.nb_models ## calculate the sum with pure python functions.    
+        avg_accuracy = sum(accs)/self.nb_models
+
+        self.log("loss/train", loss)
+        self.log("acc/train", avg_accuracy*100)
+        return loss
+
+    def configure_optimizers(self):
+        optimizer = torch.optim.AdamW(
+            self.models.parameters(),
+            lr=self.hparams.learning_rate,
+            weight_decay=self.hparams.weight_decay,
+        )
+        return optimizer
+
+class TabularEnsembleDKL(TabularEnsembleModel):
+    """Tabular ensemble model. 
+
+    """
+    def __init__(self,hparams):
+        super().__init__(hparams)
+        self.traincriterion = torch.nn.NLLLoss()
+        self.kl = Model_D_KL("torch")
+        self.gamma = hparams.gamma
+    
+    def training_step(self, batch, batch_nb):
+        """When we train, we want to train independently. 
+        Loss = NLL(log \bar{f}, y ) + gamma*DKL(softmaxes, label)
+        where DKL= 1/M sum_i^M [log (1/M) - log ((f_i^{(y)})/(\sum_i^M f_i^{(y)}))]
+        """
+        softmax = torch.nn.Softmax(dim = 1)
+        
+        numerical,categorical, labels = batch
+        losses = []
+        accs = []
+        softmaxes = []
+        for m in self.models:
+            # get logits
+            predictions = m(numerical,categorical)
+            normed = softmax(predictions)
+            softmaxes.append(normed)
+            #mloss = self.criterion(predictions, labels)
+            #accuracy = self.accuracy(predictions,labels)
+            #losses.append(mloss)
+            #accs.append(accuracy)
+        logoutput = torch.log(torch.mean(torch.stack(softmaxes),dim = 0))
+        mloss = self.traincriterion(logoutput, labels)
+        dklloss = torch.mean(self.kl.kl(softmaxes,labels))
+        loss = (mloss + self.gamma*dklloss) ## with gamma equal to 1, this is the same as the standard ensemble training loss (independent). 
+        accuracy = self.accuracy(logoutput,labels)
+
+        self.log("loss/train", loss)
+        self.log("acc/train", accuracy*100)
+        self.log("reg/dkl",dklloss)
+        self.log("reg/mloss", mloss)
+
+        return loss
+
+class TabularEnsembleJGAP(TabularEnsembleModel):
+    """Tabular ensemble model. 
+
+    """
+    def __init__(self,hparams):
+        super().__init__(hparams)
+        self.criterion = torch.nn.CrossEntropyLoss()
+        self.traincriterion = torch.nn.NLLLoss()
+        self.kl = Model_D_KL("torch")
+        self.gamma = hparams.gamma
+    
+    def training_step(self, batch, batch_nb):
+        """When we train, we want to train independently. 
+        Loss = NLL(log \bar{f}, y ) + gamma*DKL(softmaxes, label)
+        where DKL= 1/M sum_i^M [log (1/M) - log ((f_i^{(y)})/(\sum_i^M f_i^{(y)}))]
+        """
+        softmax = torch.nn.Softmax(dim=1)
+
+        numerical, categorical, labels = batch
+        raw_preds = []
+        softmaxes = []
+        losses = []
+        for m in self.models:
+            # get logits
+            predictions = m(numerical, categorical)
+            raw_preds.append(predictions)
+            # exp-normalize
+            normed = softmax(predictions-torch.max(predictions, axis=1).reshape(-1, 1))
+            softmaxes.append(normed)
+            smloss = self.criterion(predictions, labels)
+            # accuracy = self.accuracy(predictions,labels)
+            losses.append(smloss)
+            # accs.append(accuracy)
+        outputs = torch.mean(torch.stack(softmaxes), dim=0)
+        #$outputs = outputs + 1e-4
+        #$outputs = torch.div(outputs,torch.sum(outputs,axis = 1).reshape(-1,1))
+        mloss = self.traincriterion(torch.log(outputs), labels)
+        # jensen gap
+        avg_sm_loss = sum(losses)/self.nb_models
+        jgaploss = avg_sm_loss - mloss
+
+        loss = (
+              mloss + self.gamma * jgaploss)  ## with gamma equal to 1, this is the same as the standard ensemble training loss (independent).
+        accuracy = self.accuracy(outputs, labels)
+
+        self.log("loss/train", loss)
+        self.log("acc/train", accuracy * 100)
+        self.log("reg/mloss", mloss)
+        self.log("reg/jgap", jgaploss)
+        self.log("reg/avg_sm_loss", avg_sm_loss)
+        return loss
 
 class Regression_Models(pl.LightningModule):
     """Base class for regression models. 
