@@ -19,7 +19,7 @@ from ensemble_attention.module import CIFAR10Module,CIFAR10EnsembleModule,\
     CIFAR10EnsembleDKL_Avg_Module, CIFAR10EnsembleJGAPModule, CIFAR10EnsembleJGAPLModule, \
     RegressionSingleModel, RegressionEnsembleModel, RegressionEnsemble_JGModel, \
     ClassasRegressionSingleModel,ClassasRegressionEnsembleModel, ClassasRegressionEnsemble_JGModel, \
-    ClassasRegressionSingleModelOneHot, ClassasRegressionEnsembleModelOneHot, ClassasRegressionEnsembleJGAPModelOneHot, TabularSingleModel
+    ClassasRegressionSingleModelOneHot, ClassasRegressionEnsembleModelOneHot, ClassasRegressionEnsembleJGAPModelOneHot, TabularSingleModel, TabularEnsembleModel, TabularEnsembleDKL, TabularEnsembleJGAP
 
 #from ensemble_attention.module import CIFAR100Module,CIFAR100EnsembleModule,CIFAR100EnsembleDKLModule, \
 #    CIFAR100EnsemblePAC2BModule,CIFAR100EnsembleJS_Unif_Module,CIFAR100EnsembleJS_Avg_Module
@@ -55,6 +55,9 @@ modules = {"base":CIFAR10Module,
         "casregress_ensemble_onehot":ClassasRegressionEnsembleModelOneHot,
         "casregress_ensemble_jgap_onehot":ClassasRegressionEnsembleJGAPModelOneHot,
         "tabular":TabularSingleModel,
+        "tabular_ensemble":TabularEnsembleModel,
+        "tabular_ensemble_dkl":TabularEnsembleDKL,
+        "tabular_ensemble_jgap":TabularEnsembleJGAP,
         #"base_100":CIFAR100Module,
         #"ensemble_100":CIFAR100EnsembleModule,  # train time ensemble
         #"ensemble_dkl_100":CIFAR100EnsembleDKLModule,  #jgap ensemble
@@ -211,7 +214,7 @@ def main(args):
        #trainer = Trainer(**trainerargs,callbacks = [Check_GradNorm()])
         trainer = Trainer(**trainerargs,callbacks = [GradNormCallbackSplit()])
     else:
-        trainer = Trainer(**trainerargs,callbacks = [EarlyStopping(monitor="acc/val",mode="max",patience=16)])
+        trainer = Trainer(**trainerargs,callbacks = [GradNormCallbackSplit(),EarlyStopping(monitor="acc/val",mode="max",patience=100)])
 
     ## define arguments for each model class: 
     all_args = {"hparams":args} 
@@ -298,6 +301,7 @@ def main(args):
     if bool(args.test_phase) or bool(args.random_eval):
         pass
     else:
+        torch.autograd.set_detect_anomaly(False)
         trainer.fit(model, ind_data)
 
     ## testing and evaluation :
