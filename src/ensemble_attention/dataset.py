@@ -1,5 +1,6 @@
 ## smaller datasets that aren't cifar10
 import os 
+import gzip
 import zipfile
 from PIL import Image
 import numpy as np 
@@ -20,10 +21,62 @@ def replace_with_indices(df):
         df_mapped[column] = df[column].map(mapping)
     return df_mapped
 
+class ForestCoverData(Dataset):
+    def __init__(self,root_dir,mode = "val"):
+        """Given a root directory, we use the canonical train/val/test split for this data. 
+
+        """
+        self.root_dir = root_dir
+        assert mode in ["val","test","train"]
+        self.mode = mode
+        with gzip.open(os.path.join(root_dir,"covtyp.data.gz"),"r") as f:
+            file_content = f.read()
+        dataarray = pd.read_csv(StringIO(str(file_content,"utf-8"))).values
+        
+        features = dataarray[:,:54]
+        targets = dataarray[:,54]
+        train_index = 11340
+        val_index = train_index+3780
+        ## derived from covertype info. 
+        self.train_features,self.train_targets = features[:train_index,:],targets[:train_index,:]
+        self.val_features,self.val_targets = features[train_index:val_index,:],targets[train_index:val_index,:]
+        self.test_features,self.test_targets = features[val_index:,:],targets[val_index:,:]
+
+        self.normalizer = self.get_normalizer(train_features)
+        if self.mode == "train":
+            self.features = train_features
+            self.targets = train_targets
+        elif self.mode == "test":    
+            self.features = test_features
+            self.targets = test_targets
+        elif self.mode == "val":    
+            self.features = val_features
+            self.targets = val_targets
+
+    def get_normalizer(self,traindata):
+        """Normalizes numerical data according standard scaling or quantile transform.
+
+        """
+        normalizer = sklearn.preprocessing.StandardScaler()
+        normalizer.fit(traindata)
+        return normalizer
+
+    def __len__(self):
+        return len(self.features)
+
+    def __getitem__(self, idx):
+        num, target = self.features[idx], self.targets[idx]
+        if len(np.shape(num)) == 1:
+            num = num.reshape(1, -1)
+        num = self.normalizer.transform(num).squeeze()
+        if self.target_transform:
+            target = self.target_transform(target)
+        return torch.from_numpy(num).float(), None, target 
+
+
 class AdultDataset(Dataset):
     def __init__(self,root_dir, transform = None,target_transform = None, seed = 0, test_size = 10000, train = False):
         self.seed = seed
-        self.tensorize = Compose([ToTensor()])
         numerical_features = ["age","fnlwgt","educational-num","capital-gain","capital-loss","hours-per-week"]
         categorical_features = ["workclass","education","marital-status","occupation","relationship","race","gender","native-country"]
         target = "income"

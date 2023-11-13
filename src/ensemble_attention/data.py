@@ -2,10 +2,58 @@ import pytorch_lightning as pl
 import numpy as np
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
-from ensemble_attention.dataset import AdultDataset
+from ensemble_attention.dataset import AdultDataset, ForestCoverDataset
 import torchvision.datasets as datasets
 import torch
 import os
+
+class ForestCoverData(pl.LightningDataModule):
+    def __init__(self,args):
+        super().__init__()
+        self.hparams = args
+    def train_dataloader(self, shuffle = True):    
+        train_dataset = ForestCoverDataset(
+          self.hparams.data_dir,
+          mode = "train"
+        )
+        dataloader = DataLoader(
+          train_dataset,
+          batch_size=self.hparams.batch_size,
+          num_workers=self.hparams.num_workers,
+          shuffle=shuffle,
+          drop_last=False,
+          #pin_memory=True,
+        )
+        return dataloader
+
+    def val_dataloader(self, shuffle = False):    
+        test_dataset = ForestCoverDataset(
+          self.hparams.data_dir,
+          mode = "val"
+        )
+        dataloader = DataLoader(
+          test_dataset,
+          batch_size=self.hparams.batch_size,
+          num_workers=self.hparams.num_workers,
+          shuffle=shuffle,
+          drop_last=False,
+          #pin_memory=True,
+        )
+        return dataloader
+    def test_dataloader(self, shuffle = False):    
+        test_dataset = ForestCoverDataset(
+          self.hparams.data_dir,
+          mode = "test"
+        )
+        dataloader = DataLoader(
+          test_dataset,
+          batch_size=self.hparams.batch_size,
+          num_workers=self.hparams.num_workers,
+          shuffle=shuffle,
+          drop_last=False,
+          #pin_memory=True,
+        )
+        return dataloader
 
 
 class AdultData(pl.LightningDataModule):
