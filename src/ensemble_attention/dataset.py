@@ -13,9 +13,17 @@ from torchvision.datasets import MNIST
 from tqdm import tqdm 
 import pandas as pd
 
+def replace_with_indices(df):
+    df_mapped = df.copy()
+    for column in df.columns:
+        mapping = {value: index for index, value in enumerate(df[column].unique())}
+        df_mapped[column] = df[column].map(mapping)
+    return df_mapped
+
 class AdultDataset(Dataset):
     def __init__(self,root_dir, transform = None,target_transform = None, seed = 0, test_size = 10000, train = False):
         self.seed = seed
+        self.tensorize = Compose([ToTensor()])
         numerical_features = ["age","fnlwgt","educational-num","capital-gain","capital-loss","hours-per-week"]
         categorical_features = ["workclass","education","marital-status","occupation","relationship","race","gender","native-country"]
         target = "income"
@@ -24,8 +32,12 @@ class AdultDataset(Dataset):
         self.root_dir = root_dir    
         self.raw_data = pd.read_csv(os.path.join(root_dir,"adult.csv"),na_values ="?").dropna() ## remove datapoints with nan values. 
         num_data = self.raw_data[numerical_features].values
-        cat_data = self.raw_data[categorical_features].values
-        targets = self.raw_data[target].values==">50K" ## transform to binary. 
+        ## now convert category labels to indices. 
+        cat_data = replace_with_indices(self.raw_data[categorical_features]).values
+        
+        self.cat_sizes = [len(np.unique(di)) for di in cat_data.T]
+
+        targets = (self.raw_data[target].values==">50K").astype(int) ## transform to binary. 
         self.transform = transform
         self.target_transform = target_transform
 
@@ -49,8 +61,6 @@ class AdultDataset(Dataset):
             self.features = train_features
             self.targets = train_targets
 
-        self.cat_sizes = [len(np.unique(di)) for di in cat_data.T]
-
     def get_normalizer(self,traindata,normtype="standard"):
         """Normalizes numerical data according standard scaling or quantile transform.
 
@@ -72,12 +82,15 @@ class AdultDataset(Dataset):
     def __len__(self):
         return len(self.features[0])
 
-    def __getitem__(self,idx):
-        num,cat,target = self.features[0][idx],self.features[1][idx],self.targets[idx]
-        num = self.normalizer.transform(num)
+    def __getitem__(self, idx):
+        num, cat, target = self.features[0][idx], self.features[1][idx], self.targets[idx]
+        if len(np.shape(num)) == 1:
+            num = num.reshape(1, -1)
+        num = self.normalizer.transform(num).squeeze()
         if self.target_transform:
             target = self.target_transform(target)
-        return num,cat,target
+            
+        return torch.from_numpy(num).float(), torch.from_numpy(cat).int(), target 
 
 class WineDataset(Dataset):
     def __init__(self,root_dir,transform =None,target_transform = None,seed = 0,test_size = 1000,color = None,train = False):
@@ -225,7 +238,7 @@ class MNIST5000Module_class(pl.LightningDataModule):
         self.mnist_predict = MNIST(self.hparams.data_dir,train =
                 False,transform=Compose([ToTensor(),Normalize((0.1307,),(0.3081))]),download = True)
         self.mnist_train = Subset(MNIST(self.hparams.data_dir,train =
-            True,transform=Compose([ToTensor(),Normalize((0.1307,),(0.3081))]),download=True),np.random.permutation(np.arange(60000))[:5000])
+            True,transform=Compose([ToTensor(),Normalize((0.1307,),(0.3081))]),download=True),np.arange(5000))
     def train_dataloader(self,shuffle = True,aug = False):
         return DataLoader(self.mnist_train,
             batch_size=self.hparams.batch_size,

@@ -258,6 +258,10 @@ class Model_D_KL(object):
         normalization = torch.sum(correct_probs,axis = 1)[:,None]
         normed_probs = torch.div(correct_probs,normalization)
         kls = (1./M)*torch.sum(torch.sub(np.log(1./M),torch.log(normed_probs)),axis = 1) 
+        if any(torch.isinf(kls)):
+            import pdb; pdb.set_trace()
+        if any(torch.isnan(kls)):    
+            import pdb; pdb.set_trace()
         return kls
 
 class Model_Ortega_Variance(object):

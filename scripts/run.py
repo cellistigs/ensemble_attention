@@ -8,7 +8,7 @@ import torch
 import json
 import numpy as np
 from pytorch_lightning import Trainer, seed_everything
-from pytorch_lightning.callbacks import ModelCheckpoint
+from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from pytorch_lightning.loggers import WandbLogger, TensorBoardLogger
 
 from ensemble_attention.callback import Check_GradNorm
@@ -19,7 +19,7 @@ from ensemble_attention.module import CIFAR10Module,CIFAR10EnsembleModule,\
     CIFAR10EnsembleDKL_Avg_Module, CIFAR10EnsembleJGAPModule, CIFAR10EnsembleJGAPLModule, \
     RegressionSingleModel, RegressionEnsembleModel, RegressionEnsemble_JGModel, \
     ClassasRegressionSingleModel,ClassasRegressionEnsembleModel, ClassasRegressionEnsemble_JGModel, \
-    ClassasRegressionSingleModelOneHot, ClassasRegressionEnsembleModelOneHot, ClassasRegressionEnsembleJGAPModelOneHot, TabularSingleModel
+    ClassasRegressionSingleModelOneHot, ClassasRegressionEnsembleModelOneHot, ClassasRegressionEnsembleJGAPModelOneHot, TabularSingleModel, TabularEnsembleModel, TabularEnsembleDKL, TabularEnsembleJGAP
 
 #from ensemble_attention.module import CIFAR100Module,CIFAR100EnsembleModule,CIFAR100EnsembleDKLModule, \
 #    CIFAR100EnsemblePAC2BModule,CIFAR100EnsembleJS_Unif_Module,CIFAR100EnsembleJS_Avg_Module
@@ -28,7 +28,8 @@ from ensemble_attention.module import CIFAR10Module,CIFAR10EnsembleModule,\
 from ensemble_attention.callback import GradNormCallbackSplit, GradNormCallback
 from pytorch_lightning.plugins import ddp_plugin
 
-from ensemble_attention.dataset import WineDataModule,MNISTModule,MNISTModule_class,MNIST10000Module
+from ensemble_attention.dataset import WineDataModule,MNISTModule,MNISTModule_class,MNIST10000Module,MNIST5000Module_class,AdultDataset
+from ensemble_attention.data import AdultData
 
 from cifar10_ood.data import CIFAR10Data,CIFAR10_BagData,CIFAR10_1Data,CINIC10_Data,CIFAR10_CData, CIFAR100Data, CIFAR100CoarseData
 
@@ -54,6 +55,9 @@ modules = {"base":CIFAR10Module,
         "casregress_ensemble_onehot":ClassasRegressionEnsembleModelOneHot,
         "casregress_ensemble_jgap_onehot":ClassasRegressionEnsembleJGAPModelOneHot,
         "tabular":TabularSingleModel,
+        "tabular_ensemble":TabularEnsembleModel,
+        "tabular_ensemble_dkl":TabularEnsembleDKL,
+        "tabular_ensemble_jgap":TabularEnsembleJGAP,
         #"base_100":CIFAR100Module,
         #"ensemble_100":CIFAR100EnsembleModule,  # train time ensemble
         #"ensemble_dkl_100":CIFAR100EnsembleDKLModule,  #jgap ensemble
@@ -82,18 +86,31 @@ def traindata_eval(model,ind_data,device,softmax = True, store_split = False):
     ## model, cifart10data,cifart10_1data,
     model.eval()
     with torch.no_grad():
-        for idx,batch in tqdm(enumerate(ind_data.train_dataloader(shuffle=False,aug=False))):
-            ims = batch[0].to(device)
-            labels = batch[1].to(device)
-            try:
-                pred, label = model.calibration((ims,labels),store_split = True)
-            except TypeError:    
-                pred, label = model.calibration((ims,labels))
-            ## to cpu
-            predarray = pred.cpu().numpy() ## 256x10
-            labelarray = label.cpu().numpy() ## 
-            all_preds.append(predarray)
-            all_labels.append(labelarray)
+        try:
+            for idx,batch in tqdm(enumerate(ind_data.train_dataloader(shuffle=False,aug=False))):
+                batch_device = (b.to(device) for b in batch)
+                try:
+                    pred, label = model.calibration(batch_device,store_split = True)
+                except TypeError:    
+                    pred, label = model.calibration(batch_device)
+                ## to cpu
+                predarray = pred.cpu().numpy() ## 256x10
+                labelarray = label.cpu().numpy() ## 
+                all_preds.append(predarray)
+                all_labels.append(labelarray)
+        except TypeError:         
+            for idx,batch in tqdm(enumerate(ind_data.train_dataloader(shuffle=False))):
+                batch_device = (b.to(device) for b in batch)
+                try:
+                    pred, label = model.calibration(batch_device,store_split = True)
+                except TypeError:    
+                    pred, label = model.calibration(batch_device)
+                ## to cpu
+                predarray = pred.cpu().numpy() ## 256x10
+                labelarray = label.cpu().numpy() ## 
+                all_preds.append(predarray)
+                all_labels.append(labelarray)
+
 
     all_preds_array = np.concatenate(all_preds,axis = 0)
     all_labels_array = np.concatenate(all_labels,axis = 0)
@@ -120,24 +137,22 @@ def custom_eval(model,ind_data,ood_data,device,softmax = True, store_split=False
     model.eval()
     with torch.no_grad():
         for idx,batch in tqdm(enumerate(ind_data.test_dataloader())):
-            ims = batch[0].to(device)
-            labels = batch[1].to(device)
+            batch_device = (b.to(device) for b in batch)
             try:
-                pred, label = model.calibration((ims, labels), store_split=store_split)
+                pred, label = model.calibration(batch_device, store_split=store_split)
             except TypeError:
-                pred, label = model.calibration((ims, labels))
+                pred, label = model.calibration(batch_device)
             ## to cpu
             predarray = pred.cpu().numpy() ## 256x10
             labelarray = label.cpu().numpy() ## 
             all_preds_ind.append(predarray)
             all_labels_ind.append(labelarray)
         for idx,batch in tqdm(enumerate(ood_data.test_dataloader())):
-            ims = batch[0].to(device)
-            labels = batch[1].to(device)
+            batch_device = (b.to(device) for b in batch)
             try:
-                pred,label = model.calibration((ims,labels))
+                pred,label = model.calibration(batch_device,store_split=store_split)
             except TypeError:
-                pred, label = model.calibration((ims, labels))
+                pred, label = model.calibration(batch_device)
             ## to cpu
             predarray = pred.cpu().numpy() ## 256x10
             labelarray = label.cpu().numpy() ## 
@@ -150,7 +165,7 @@ def custom_eval(model,ind_data,ood_data,device,softmax = True, store_split=False
     all_labels_ood_array = np.concatenate(all_labels_ood,axis = 0)
     return all_preds_ind_array,all_labels_ind_array,all_preds_ood_array,all_labels_ood_array
 
-@hydra.main(config_path = os.path.join(script_dir,"../configs/"),config_name = "run_default_gpu")
+@hydra.main(config_path = os.path.join(script_dir,"../configs/"),config_name = "run_default_tabular")
 def main(args):
 
     ## Set seeds if given.  
@@ -199,7 +214,7 @@ def main(args):
        #trainer = Trainer(**trainerargs,callbacks = [Check_GradNorm()])
         trainer = Trainer(**trainerargs,callbacks = [GradNormCallbackSplit()])
     else:
-        trainer = Trainer(**trainerargs)
+        trainer = Trainer(**trainerargs,callbacks = [GradNormCallbackSplit(),EarlyStopping(monitor="acc/val",mode="max",patience=100)])
 
     ## define arguments for each model class: 
     all_args = {"hparams":args} 
@@ -247,6 +262,8 @@ def main(args):
         ind_data = WineDataModule(args)
     elif args.test_set == "mnist":    
         ind_data = MNISTModule(args)
+    elif args.test_set == "mnist_5000":    
+        ind_data = MNIST5000Module_class(args)
     elif args.test_set == "mnist10000":    
         ind_data = MNIST10000Module(args)
         #ind_data = MNISTModule_class(args)
@@ -254,6 +271,8 @@ def main(args):
         ind_data = CIFAR100Data(args)
     elif args.test_set == "CIFAR100Coarse":
         ind_data = CIFAR100CoarseData(args)
+    elif args.test_set == "Adult":
+        ind_data = AdultData(args)
     else:
         raise ValueError("Unknown dataset")
 
@@ -273,6 +292,8 @@ def main(args):
         ood_data = CIFAR100Data(args)
     elif args.ood_dataset == "CIFAR100Coarse":
         ood_data = CIFAR100CoarseData(args)
+    elif args.ood_dataset == "Adult":    
+        ood_data = AdultData(args)
     else:
         raise ValueError("Unknown dataset")
 
@@ -280,6 +301,7 @@ def main(args):
     if bool(args.test_phase) or bool(args.random_eval):
         pass
     else:
+        torch.autograd.set_detect_anomaly(False)
         trainer.fit(model, ind_data)
 
     ## testing and evaluation :
@@ -317,6 +339,8 @@ def main(args):
     elif args.ood_dataset == "CIFAR100Coarse":
         np.save("ood_cifar100coarse_{}_{}_preds".format(args.corruption, args.level), preds_ood)
         np.save("ood_cifar100coarse_{}_{}_labels".format(args.corruption, args.level), labels_ood)
+    elif args.ood_dataset == "Adult":
+        pass
     else:
         raise Exception("option for ood dataset not recognized.")
     ## write metadata
@@ -324,7 +348,8 @@ def main(args):
     metadata["model_save_path"] = trainer.checkpoint_callback.dirpath
     with open("meta.json","w") as f:
         json.dump(metadata,f)
-
+    print(data["in_dist_acc"],"objective")
+    return data["in_dist_acc"]
 
 if __name__ == "__main__":
     main()

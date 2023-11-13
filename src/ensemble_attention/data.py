@@ -15,12 +15,10 @@ class AdultData(pl.LightningDataModule):
     def train_dataloader(self, shuffle = True):    
         train_dataset = AdultDataset(
           self.hparams.data_dir,
-          transform=self.hparams.tab_transform,
+          transform=self.hparams.tabular.tab_transform,
           train = True
         )
 
-        if self.set_targets_train is not None:
-          raise NotImplementedError('custom train targets NA')
 
         dataloader = DataLoader(
           train_dataset,
@@ -32,15 +30,30 @@ class AdultData(pl.LightningDataModule):
         )
         return dataloader
 
-    def test_dataloader(self, shuffle = False):    
+    def val_dataloader(self, shuffle = False):    
         test_dataset = AdultDataset(
           self.hparams.data_dir,
-          transform=self.hparams.tab_transform,
+          transform=self.hparams.tabular.tab_transform,
           train = False
         )
 
-        if self.set_targets_train is not None:
-          raise NotImplementedError('custom train targets NA')
+
+        dataloader = DataLoader(
+          test_dataset,
+          batch_size=self.hparams.batch_size,
+          num_workers=self.hparams.num_workers,
+          shuffle=shuffle,
+          drop_last=False,
+          #pin_memory=True,
+        )
+        return dataloader
+    def test_dataloader(self, shuffle = False):    
+        test_dataset = AdultDataset(
+          self.hparams.data_dir,
+          transform=self.hparams.tabular.tab_transform,
+          train = False
+        )
+
 
         dataloader = DataLoader(
           test_dataset,
@@ -225,8 +238,4 @@ class ImagenetData(pl.LightningDataModule):
   def test_dataloader(self):
     return self.val_dataloader()
 
-class AdultData(pl.LightningDataModule):
-    def __init__(self, args):
-        super().__init__()
-        self.hparams = args
 

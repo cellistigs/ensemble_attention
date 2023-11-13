@@ -1,12 +1,13 @@
 """Much of this code is used to implement models from https://arxiv.org/pdf/2106.11959.pdf, with implementation details taken from https://github.com/yandex-research/tabular-dl-revisiting-models/blob/main/bin/mlp.py 
 """
 import torch
+import torch.nn.functional as F
 import torch.nn as nn
 import torch.functional as F
 import math
 import os 
 
-class MLP(nn.module):
+class MLP(nn.Module):
     """MLP that takes both categorical and numerical data as input. We separate out the number of numerical inputs from the categorical, which we keep track of separately. 
     We assume numerical data is normalized, and we embed all categorical features in the same space. 
     :param d_in: number of numerical input dimensions
@@ -22,15 +23,17 @@ class MLP(nn.module):
             d_layers,
             d_out,
             categories,
-            d_embedding
+            d_embedding,
+            dropout
             ):
         super().__init__()
         if categories is not None: 
             d_in += len(categories) * d_embedding
             category_offsets = torch.tensor([0] + categories[:-1]).cumsum(0) # offsets so we can project the categorical data into the right spaces. 
             self.register_buffer('category_offsets', category_offsets)
-            self.category_embeddings = nn.Embedding(sum(categories), d_embedding)
-            nn.init.kaiming_uniform_(self.category_embeddings.weight, a = math.sqrt(5))
+            if categories is not None:
+                self.category_embeddings = nn.Embedding(sum(categories), d_embedding)
+                nn.init.kaiming_uniform_(self.category_embeddings.weight, a = math.sqrt(5))
 
         self.layers = nn.ModuleList(
                 [
@@ -38,13 +41,13 @@ class MLP(nn.module):
                     for i, x in enumerate(d_layers)
                 ]
             )
-        self.dropout = dropout
+        self.dropout = dropout 
         self.head = nn.Linear(d_layers[-1] if d_layers else d_in, d_out)
 
     def forward(self, x_num, x_cat):
         x = []
         if x_num is not None:
-            x.append(x_num)
+            x.append(x_num.float())
         if x_cat is not None:
             x.append(
                     self.category_embeddings(x_cat + self.category_offsets[None]).view(x_cat.size(0),-1) # add offsets to categorical data, then embed this into higher dimensional space. 
@@ -60,8 +63,10 @@ class MLP(nn.module):
         x = x.squeeze(-1)
         return x
 
-def MLP_Adult(d_layers,d_embedding):
-    return MLP(6,d_layers,2,[7,16,7,14,6,5,2,41],d_embedding)
+def MLP_Adult(d_layers,d_embedding,dropout):
+    return MLP(6,d_layers,2,[7,16,7,14,6,5,2,41],d_embedding,dropout)
 
+def MLP_ForestCover(d_layers,d_embedding,dropout):
+    return MLP("inputsize",d_layers,7,None,None,dropout)
 
 

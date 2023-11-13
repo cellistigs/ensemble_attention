@@ -64,7 +64,7 @@ def ens_evaluate(preds,labels):
     return ens_acc
 
 def bootstrap_ens_evaluate(preds,labels,members = 4,samples = 100):
-    preds_subsamples = [np.array(preds)[np.random.choice(len(preds),4,replace =False).astype(int)] for i in range(samples)]
+    preds_subsamples = [np.array(preds)[np.random.choice(len(preds),members,replace =False).astype(int)] for i in range(samples)]
     ###### fix to iterate over. 
     ens_acc = []
     for preds in preds_subsamples:
