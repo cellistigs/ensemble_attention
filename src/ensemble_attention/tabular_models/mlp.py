@@ -30,8 +30,9 @@ class MLP(nn.Module):
             d_in += len(categories) * d_embedding
             category_offsets = torch.tensor([0] + categories[:-1]).cumsum(0) # offsets so we can project the categorical data into the right spaces. 
             self.register_buffer('category_offsets', category_offsets)
-            self.category_embeddings = nn.Embedding(sum(categories), d_embedding)
-            nn.init.kaiming_uniform_(self.category_embeddings.weight, a = math.sqrt(5))
+            if categories is not None:
+                self.category_embeddings = nn.Embedding(sum(categories), d_embedding)
+                nn.init.kaiming_uniform_(self.category_embeddings.weight, a = math.sqrt(5))
 
         self.layers = nn.ModuleList(
                 [
@@ -64,5 +65,7 @@ class MLP(nn.Module):
 def MLP_Adult(d_layers,d_embedding,dropout):
     return MLP(6,d_layers,2,[7,16,7,14,6,5,2,41],d_embedding,dropout)
 
+def MLP_ForestCover(d_layers,d_embedding,dropout):
+    return MLP("inputsize",d_layers,7,None,None,dropout)
 
 
