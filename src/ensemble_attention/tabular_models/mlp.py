@@ -67,6 +67,6 @@ def MLP_Adult(d_layers,d_embedding,dropout):
     return MLP(6,d_layers,2,[7,16,7,14,6,5,2,41],d_embedding,dropout)
 
 def MLP_ForestCover(d_layers,d_embedding,dropout):
-    return MLP("inputsize",d_layers,7,None,None,dropout)
+    return MLP(54,d_layers,7,None,None,dropout)
 
 

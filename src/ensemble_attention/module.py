@@ -29,7 +29,7 @@ from .cifar100_models.shake_shake import shake_resnet26_2x32d_cifar100
 # ----------------
 from .cifar10_models.shake_shake import shake_resnet26_2x96d,shake_resnet26_2x32d
 from .cifar100_models.resnet import resnet18_cifar100
-from .tabular_models.mlp import MLP_Adult
+from .tabular_models.mlp import MLP_Adult,MLP_ForestCover
 
 from .schduler import WarmupCosineLR
 from .layers import AttnComparison,PosEncodings,PosEncodingsSq,PosEncodingsSin
@@ -97,11 +97,12 @@ all_regressors = {
         "rff_100000_casf": rff_casregress_100000_mnist,
         # missing from public codebase
         # "rff_8000_casf": rff_casregress_8000_mnist,
-
+t
 }
 
 all_tabular = {
         "mlp_tabular": MLP_Adult}
+        "mlp_forestcover": MLP_ForestCover}
 
 class Tabular_Models(pl.LightningModule):
     """Base class for tabular models. 
