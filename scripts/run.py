@@ -29,7 +29,7 @@ from ensemble_attention.callback import GradNormCallbackSplit, GradNormCallback
 from pytorch_lightning.plugins import ddp_plugin
 
 from ensemble_attention.dataset import WineDataModule,MNISTModule,MNISTModule_class,MNIST10000Module,MNIST5000Module_class,AdultDataset
-from ensemble_attention.data import AdultData
+from ensemble_attention.data import AdultData, ForestCoverData
 
 from cifar10_ood.data import CIFAR10Data,CIFAR10_BagData,CIFAR10_1Data,CINIC10_Data,CIFAR10_CData, CIFAR100Data, CIFAR100CoarseData
 
@@ -273,6 +273,8 @@ def main(args):
         ind_data = CIFAR100CoarseData(args)
     elif args.test_set == "Adult":
         ind_data = AdultData(args)
+    elif args.test_set == "ForestCover":
+        ind_data = ForestCoverData(args)
     else:
         raise ValueError("Unknown dataset")
 
@@ -294,6 +296,8 @@ def main(args):
         ood_data = CIFAR100CoarseData(args)
     elif args.ood_dataset == "Adult":    
         ood_data = AdultData(args)
+    elif args.ood_dataset == "ForestCover":    
+        ood_data = ForestCoverData(args)
     else:
         raise ValueError("Unknown dataset")
 
