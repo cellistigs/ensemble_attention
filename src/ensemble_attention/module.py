@@ -318,15 +318,15 @@ class TabularEnsembleJGAP(TabularEnsembleModel):
             predictions = m(numerical, categorical)
             raw_preds.append(predictions)
             # exp-normalize
-            normed = softmax(predictions-torch.max(predictions, axis=1).reshape(-1, 1))
+            normed = softmax(predictions)
             softmaxes.append(normed)
             smloss = self.criterion(predictions, labels)
             # accuracy = self.accuracy(predictions,labels)
             losses.append(smloss)
             # accs.append(accuracy)
         outputs = torch.mean(torch.stack(softmaxes), dim=0)
-        #$outputs = outputs + 1e-4
-        #$outputs = torch.div(outputs,torch.sum(outputs,axis = 1).reshape(-1,1))
+        outputs = outputs + 1e-5
+        outputs = torch.div(outputs,torch.sum(outputs,axis = 1).reshape(-1,1))
         mloss = self.traincriterion(torch.log(outputs), labels)
         # jensen gap
         avg_sm_loss = sum(losses)/self.nb_models

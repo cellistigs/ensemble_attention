@@ -61,7 +61,6 @@ class AdultDataset(Dataset):
             self.features = train_features
             self.targets = train_targets
 
-
     def get_normalizer(self,traindata,normtype="standard"):
         """Normalizes numerical data according standard scaling or quantile transform.
 
